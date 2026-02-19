@@ -1,0 +1,27 @@
+<svg viewBox="0 0 600 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">우리안과 로고</title>
+  <desc id="logoDesc">청록색 다이아몬드 심볼과 우리안과 워드마크</desc>
+  <style>
+    .mark rect {
+      width: 86px;
+      height: 86px;
+      rx: 18;
+      ry: 18;
+      transform: rotate(45deg);
+    }
+    .logotype {
+      font-family: 'Pretendard', 'SUIT', 'Spoqa Han Sans Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+      font-weight: 700;
+      font-size: 96px;
+      letter-spacing: -0.04em;
+      fill: #1d4794;
+    }
+  </style>
+  <g class="mark" transform="translate(95 88)">
+    <rect x="-94" y="-48" fill="#2c6ab7" />
+    <rect x="-48" y="-94" fill="#1d4794" />
+    <rect x="-2" y="-48" fill="#1f8ad8" />
+    <rect x="-48" y="-2" fill="#37c3f0" />
+  </g>
+  <text class="logotype" x="210" y="115">우리안과</text>
+</svg>

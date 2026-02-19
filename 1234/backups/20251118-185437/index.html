@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infrastructure Manual - 인프라 매뉴얼</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+</head>
+<body>
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-card-header">
+                <h1>접속 인증</h1>
+                <p>아이디와 비밀번호를 입력해 매뉴얼에 접근하세요.</p>
+            </div>
+            <form class="auth-form" id="auth-login-form">
+                <label for="auth-username">아이디</label>
+                <input type="text" id="auth-username" autocomplete="username" placeholder="아이디" required>
+                <label for="auth-password">비밀번호</label>
+                <input type="password" id="auth-password" autocomplete="current-password" placeholder="비밀번호" required>
+                <button type="submit" class="save-btn">로그인</button>
+            </form>
+            <p class="auth-status-text" id="auth-status"></p>
+        </div>
+    </div>
+    <div class="container">
+        <!-- 좌측 사이드바 네비게이션 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo" title="assets/logo.png 파일을 교체하면 원하는 로고를 사용할 수 있습니다.">
+                    <img src="assets/logo.png" alt="우리안과 로고" onerror="this.style.display='none'; this.parentElement.classList.add('logo-placeholder');">
+                    <span class="logo-text">Infra</span>
+                </div>
+                <h2>우리안과 인프라 매뉴얼</h2>
+                <p class="version">Version 2.0</p>
+                <p class="logo-hint"></p>
+            </div>
+
+            <nav class="navigation">
+                <div class="nav-updates" id="nav-updates"></div>
+                <div class="nav-section">
+                    <h3>목차 (Table of Contents)</h3>
+                </div>
+                <div id="nav-sections">
+                    <!-- JavaScript에서 동적으로 생성 -->
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="add-section-btn" id="add-section-btn">+ 새 섹션 추가</button>
+            </div>
+        </aside>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <main class="main-content">
+            <div class="content-header">
+                <div class="breadcrumb" id="breadcrumb">
+                    <span>홈</span>
+                </div>
+                <div class="content-actions">
+                    <div class="action-cluster">
+                        <button class="action-btn" id="search-btn">검색</button>
+                        <button class="action-btn" id="settings-btn">설정</button>
+                        <button class="action-btn" id="edit-btn">편집</button>
+                        <button class="action-btn" id="print-btn">인쇄</button>
+                    </div>
+                    <div class="user-action-group">
+                        <button class="lock-btn" id="admin-lock-btn">관리자 잠금 설정</button>
+                        <button class="lock-btn ghost" id="account-manage-btn" disabled>계정 관리</button>
+                        <button class="lock-btn danger" id="logout-btn" disabled>로그아웃</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-body" id="content-body">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-content">
+                        <div class="welcome-hero-flag">
+                            <span class="hero-label">우리안과</span>
+                            <span class="hero-divider"></span>
+                            <span class="hero-note">Infrastructure Suite</span>
+                        </div>
+                        
+                        <div class="quick-links">
+                            <div class="quick-links-head">
+                                <h3></h3>
+                                <p class="quick-links-hint"></p>
+                            </div>
+                            <div class="link-grid" id="quick-links-grid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="document-content" id="document-content" style="display: none;">
+                    <!-- 동적으로 로드될 콘텐츠 -->
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 검색 모달 -->
+    <div class="modal" id="search-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>문서 검색</h3>
+                <button class="close-btn" id="close-search">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="search-input" placeholder="검색어를 입력하세요...">
+                <div class="search-results" id="search-results"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 편집 모달 -->
+    <div class="modal" id="edit-modal">
+        <div class="modal-content edit-modal-content">
+            <div class="modal-header">
+                <h3>콘텐츠 편집</h3>
+                <button class="close-btn" id="close-edit">&times;</button>
+            </div>
+            <div class="modal-body edit-modal-body">
+                <div class="editor-layout">
+                    <div class="editor-main">
+                        <div class="editor-toolbar" id="editor-toolbar">
+                            <div class="toolbar-row">
+                                <div class="toolbar-group toolbar-main">
+                                    <button type="button" data-command="undo">되돌리기</button>
+                                    <button type="button" data-command="redo">다시실행</button>
+                                    <button type="button" data-command="h1">H1</button>
+                                    <button type="button" data-command="h2">H2</button>
+                                    <button type="button" data-command="bold">굵게</button>
+                                    <button type="button" data-command="italic">기울임</button>
+                                    <button type="button" data-command="underline">밑줄</button>
+                                    <label class="toolbar-select">
+                                        <span>글꼴</span>
+                                        <select id="font-family-select">
+                                            <option value="">기본</option>
+                                            <option value="'Pretendard', 'Noto Sans KR', sans-serif">Pretendard</option>
+                                            <option value="'Noto Sans KR', sans-serif">Noto Sans</option>
+                                            <option value="'Malgun Gothic', sans-serif">맑은 고딕</option>
+                                            <option value="'Nanum Gothic', sans-serif">나눔고딕</option>
+                                        </select>
+                                    </label>
+                                    <label class="toolbar-select">
+                                        <span>크기</span>
+                                        <select id="font-size-select">
+                                            <option value="">기본</option>
+                                            <option value="12px">12</option>
+                                            <option value="14px">14</option>
+                                            <option value="16px">16</option>
+                                            <option value="18px">18</option>
+                                            <option value="20px">20</option>
+                                            <option value="24px">24</option>
+                                            <option value="28px">28</option>
+                                        </select>
+                                    </label>
+                                    <label class="toolbar-select color-picker" title="글자색">
+                                        <span>글자색</span>
+                                        <input type="color" id="font-color-input" value="#0f2f61" aria-label="글자색 선택">
+                                    </label>
+                                    <label class="toolbar-select color-picker" title="배경색">
+                                        <span>배경색</span>
+                                        <input type="color" id="highlight-color-input" value="#fff8c4" aria-label="배경색 선택">
+                                    </label>
+                                    <label class="toolbar-select" title="구분선 색상">
+                                        <span>구분선</span>
+                                        <select id="divider-style-select">
+                                            <option value="default">검정선</option>
+                                            <option value="primary">파란선</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                <div class="toolbar-group toolbar-align">
+                                    <button type="button" data-command="align-left">왼쪽</button>
+                                    <button type="button" data-command="align-center">가운데</button>
+                                    <button type="button" data-command="align-right">오른쪽</button>
+                                    <button type="button" data-command="align-justify">양쪽</button>
+                                    <button type="button" data-command="indent">들여쓰기</button>
+                                    <button type="button" data-command="outdent">내어쓰기</button>
+                                    <button type="button" data-command="separator">구분선</button>
+                                    <button type="button" data-command="clean">서식지우기</button>
+                                </div>
+                            </div>
+                            <div class="toolbar-row toolbar-secondary">
+                                <div class="toolbar-group toolbar-lists">
+                                    <button type="button" data-command="list">글머리</button>
+                                    <button type="button" data-command="olist">번호</button>
+                                    <button type="button" data-command="quote">인용</button>
+                                    <button type="button" data-command="code">코드</button>
+                                </div>
+                                <div class="toolbar-group toolbar-layout">
+                                    <div class="table-picker">
+                                        <button type="button" id="table-grid-trigger">레이아웃</button>
+                                        <div class="table-grid-popover" id="table-grid-popover">
+                                            <div class="table-grid" id="table-grid"></div>
+                                            <p id="table-grid-hint">0 × 0</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" data-command="table">기본표</button>
+                                    <button type="button" id="table-add-row">행 추가</button>
+                                    <button type="button" id="table-add-col">열 추가</button>
+                                    <button type="button" id="table-delete-row">행 삭제</button>
+                                    <button type="button" id="table-delete-col">열 삭제</button>
+                                </div>
+                                <div class="toolbar-group toolbar-media">
+                                    <button type="button" id="insert-image-btn">이미지</button>
+                                    <input type="file" id="image-file-input" accept="image/*" hidden>
+                                    <button type="button" id="toolbar-excel-btn" class="toolbar-accent">엑셀 표 붙여넣기</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-tools-panel" id="table-tools-panel">
+                            <div class="table-tools-row">
+                                <label for="table-width-slider">표 너비</label>
+                                <input type="range" id="table-width-slider" min="40" max="100" value="100">
+                                <span id="table-width-value">100%</span>
+                            </div>
+                            <p class="table-tools-hint">표 안을 선택하면 너비를 조절할 수 있습니다.</p>
+                        </div>
+                        <div id="edit-richarea" contenteditable="true" data-placeholder="워드처럼 자유롭게 작성하거나 붙여넣기 할 수 있습니다."></div>
+                        <div class="modal-actions">
+                            <button class="save-btn" id="save-edit">저장</button>
+                            <button class="cancel-btn" id="cancel-edit">취소</button>
+                        </div>
+                    </div>
+                    <aside class="paste-preview-panel" id="paste-preview-panel">
+                        <div class="paste-preview-header">
+                            <div>
+                                <h4>붙여넣기 미리보기</h4>
+                                <p id="paste-preview-summary">클립보드 데이터를 붙여넣으면 비교가 표시됩니다.</p>
+                            </div>
+                            <div class="preview-controls">
+                                <label for="paste-preview-mode">보기:</label>
+                                <select id="paste-preview-mode" disabled>
+                                    <option value="clean">서식 유지</option>
+                                    <option value="plain">텍스트만</option>
+                                    <option value="table">표로 변환</option>
+                                    <option value="original">원본 HTML</option>
+                                </select>
+                                <button class="ghost-btn" id="paste-settings-btn">설정</button>
+                            </div>
+                        </div>
+                        <div class="paste-preview-body">
+                            <div class="preview-block">
+                                <h5>원본</h5>
+                                <div id="paste-preview-original" class="preview-surface empty">클립보드 원본</div>
+                            </div>
+                            <div class="preview-block">
+                                <h5>적용 결과</h5>
+                                <div id="paste-preview-result" class="preview-surface empty" draggable="true">정리된 결과</div>
+                            </div>
+                        </div>
+                        <div class="table-preview-controls hidden" id="paste-table-controls">
+                            <div class="table-controls-head">
+                                <h5>감지된 표</h5>
+                                <div class="table-controls-buttons">
+                                    <button class="ghost-btn mini" id="paste-table-preview-reset">전체 보기</button>
+                                    <button class="ghost-btn mini" id="paste-table-select-all">전체 선택</button>
+                                    <button class="ghost-btn mini" id="paste-table-clear">선택 해제</button>
+                                </div>
+                            </div>
+                            <div class="table-chip-list" id="paste-table-list"></div>
+                            <p class="table-controls-hint">체크한 표만 "표로 변환" 모드와 삽입/복사 대상에 포함됩니다.</p>
+                            <div class="table-controls-actions">
+                                <button class="ghost-btn" id="paste-insert-selected" disabled>선택 표 삽입</button>
+                                <button class="ghost-btn" id="paste-copy-selected" disabled>선택 표 HTML 복사</button>
+                            </div>
+                        </div>
+                        <div class="paste-preview-footer">
+                            <button class="save-btn" id="paste-insert-preview-btn" disabled>미리보기 삽입</button>
+                            <button class="ghost-btn" id="paste-copy-html-btn" disabled>HTML 복사</button>
+                            <button class="ghost-btn" id="paste-copy-text-btn" disabled>텍스트 복사</button>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 콘텐츠 관리 모달 -->
+    <div class="modal" id="manager-modal">
+        <div class="modal-content manager-modal-content">
+            <div class="modal-header manager-header">
+                <div>
+                    <h3>콘텐츠 관리 패널</h3>
+                    <p class="modal-subtitle">목차와 문서를 정리하고 빠르게 찾아보세요.</p>
+                </div>
+                <div class="manager-header-actions">
+                    <button class="close-btn" id="close-manager">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body manager-modal-body">
+                <div class="manager-sidebar">
+                    <div class="manager-search">
+                        <input type="text" id="manager-search" placeholder="제목 또는 키 검색...">
+                    </div>
+                    <div class="manager-list" id="manager-list"></div>
+                </div>
+                <div class="manager-detail">
+                    <h4 id="manager-detail-title">섹션을 선택하세요</h4>
+                    <p class="manager-detail-hint">좌측 목록에서 항목을 선택하면 미리보기와 빠른 작업을 수행할 수 있습니다.</p>
+                    <textarea id="manager-detail-preview" readonly></textarea>
+                    <div class="manager-detail-actions">
+                        <button id="manager-open-btn" disabled>문서 열기</button>
+                        <button id="manager-edit-btn" disabled>편집 모달 열기</button>
+                        <button id="manager-delete-btn" class="danger" disabled>섹션 삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- 목차 추가 모달 -->
+        <div class="modal" id="structure-modal">
+            <div class="modal-content small-modal">
+                <div class="modal-header">
+                    <h3>새 문서/목차 추가</h3>
+                    <button class="close-btn" id="close-structure">&times;</button>
+                </div>
+                <div class="modal-body structure-modal-body">
+                    <label for="structure-parent">상위 목차</label>
+                    <select id="structure-parent"></select>
+                    <div id="structure-new-section">
+                        <label for="structure-section-title">새 목차 이름</label>
+                        <input type="text" id="structure-section-title" placeholder="예: 7 신규 서비스 인프라">
+                    </div>
+                    <label for="structure-content-title">문서 제목</label>
+                    <input type="text" id="structure-content-title" placeholder="문서 제목을 입력하세요.">
+                </div>
+                <div class="modal-actions">
+                    <button class="save-btn" id="structure-save">추가</button>
+                    <button class="cancel-btn" id="structure-cancel">취소</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 관리자 잠금 모달 -->
+        <div class="modal" id="admin-modal">
+            <div class="modal-content small-modal">
+                <div class="modal-header">
+                    <h3>관리자 잠금</h3>
+                    <button class="close-btn" id="close-admin">&times;</button>
+                </div>
+                <div class="modal-body admin-modal-body">
+                    <div class="admin-panel" id="admin-setup-panel">
+                        <p>편집 기능을 보호할 비밀번호를 설정하세요.</p>
+                        <input type="password" id="admin-passcode" placeholder="비밀번호">
+                        <input type="password" id="admin-passcode-confirm" placeholder="비밀번호 확인">
+                    </div>
+                    <div class="admin-panel" id="admin-unlock-panel">
+                        <p>비밀번호를 입력해 잠금을 해제하세요.</p>
+                        <input type="password" id="admin-passcode-enter" placeholder="비밀번호">
+                    </div>
+                    <div class="admin-panel" id="admin-manage-panel">
+                        <p>현재 관리자 보호가 해제된 상태입니다. 다시 잠그거나 비밀번호를 변경할 수 있습니다.</p>
+                        <div class="admin-manage-buttons">
+                            <button class="save-btn" id="admin-relock-btn">다시 잠그기</button>
+                            <button class="ghost-btn" id="admin-change-btn">비밀번호 변경</button>
+                        </div>
+                    </div>
+                    <p class="admin-status-text" id="admin-status-text"></p>
+                </div>
+                <div class="modal-actions admin-actions">
+                    <button class="ghost-btn danger" id="admin-disable-btn">잠금 비활성화</button>
+                    <div class="admin-action-group">
+                        <button class="save-btn" id="admin-submit-btn">확인</button>
+                        <button class="cancel-btn" id="admin-cancel-btn">취소</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 계정 관리 모달 -->
+        <div class="modal" id="accounts-modal">
+            <div class="modal-content small-modal account-modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h3>계정 관리</h3>
+                        <p class="modal-subtitle">로그인에 사용할 계정을 추가/수정/삭제할 수 있습니다.</p>
+                    </div>
+                    <button class="close-btn" id="close-accounts">&times;</button>
+                </div>
+                <div class="modal-body account-modal-body">
+                    <div class="account-list" id="account-list">
+                        <p class="account-hint">계정 정보를 불러오는 중입니다...</p>
+                    </div>
+                    <form class="account-create" id="account-create-form">
+                        <h4>새 계정 추가</h4>
+                        <input type="text" id="account-create-username" placeholder="아이디" autocomplete="off" required>
+                        <input type="password" id="account-create-password" placeholder="비밀번호 (6자 이상)" autocomplete="new-password" required>
+                        <button type="submit" class="save-btn">계정 생성</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 설정 모달 -->
+        <div class="modal" id="settings-modal">
+            <div class="modal-content settings-modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h3>시스템 설정</h3>
+                        <p class="modal-subtitle">빠른 시작 카드, 데이터 백업, 목차 관리 등 관리자 기능을 모았습니다.</p>
+                    </div>
+                    <button class="close-btn" id="close-settings">&times;</button>
+                </div>
+                <div class="modal-body settings-modal-body">
+                    <section>
+                        <div class="settings-section-head">
+                            <div>
+                                <h4>빠른 시작 카드</h4>
+                                <p>홈 화면의 카드 제목/설명/연결 문서를 편집하세요.</p>
+                            </div>
+                            <button class="ghost-btn mini" id="add-quick-link-row">카드 추가</button>
+                        </div>
+                        <div class="quick-link-editor" id="quick-link-editor"></div>
+                        <div class="settings-inline-actions">
+                            <button class="ghost-btn" id="reset-quick-links">기본 카드로 복구</button>
+                            <button class="save-btn" id="save-quick-links">빠른 시작 저장</button>
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="settings-section-head">
+                            <div>
+                                <h4>데이터 및 목차 관리</h4>
+                                <p>JSON으로 백업하거나 가져오고, 새 문서를 추가하세요.</p>
+                            </div>
+                        </div>
+                        <div class="settings-grid-actions">
+                            <button class="ghost-btn" id="settings-open-manager">콘텐츠 패널 열기</button>
+                            <button class="ghost-btn" id="settings-export-json">JSON 내보내기</button>
+                            <label class="ghost-btn file-upload-btn">
+                                JSON 가져오기
+                                <input type="file" id="settings-import-json" accept="application/json" hidden>
+                            </label>
+                            <button class="ghost-btn" id="settings-add-section">+ 새 섹션 만들기</button>
+                        </div>
+                    </section>
+
+                    <section>
+                        <div class="settings-section-head">
+                            <div>
+                                <h4>유지보수 도구</h4>
+                                <p>데이터 백업 파일을 내려받거나 초기화할 수 있습니다.</p>
+                            </div>
+                        </div>
+                        <div class="settings-grid-actions">
+                            <button class="ghost-btn" id="settings-download-backup">로컬 데이터 백업 (JSON)</button>
+                            <button class="ghost-btn danger" id="settings-reset-data">로컬 데이터 초기화</button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <!-- 붙여넣기 옵션 팝오버 -->
+        <div class="paste-popover" id="paste-popover">
+            <div class="popover-header">
+                <strong>붙여넣기 옵션</strong>
+                <button type="button" class="close-btn" id="close-paste-popover">&times;</button>
+            </div>
+            <p class="popover-caption" id="paste-popover-caption">원하는 방식을 선택하세요.</p>
+            <div class="popover-actions">
+                <button type="button" class="save-btn" data-paste-mode="clean">서식 유지</button>
+                <button type="button" class="ghost-btn" data-paste-mode="plain">텍스트만</button>
+                <button type="button" class="ghost-btn" data-paste-mode="table">표로 변환</button>
+                <button type="button" class="ghost-btn danger" data-paste-mode="cancel">취소</button>
+            </div>
+        </div>
+
+        <!-- 붙여넣기 설정 모달 -->
+        <div class="modal" id="paste-settings-modal">
+            <div class="modal-content small-modal">
+                <div class="modal-header">
+                    <h3>붙여넣기 규칙</h3>
+                    <button class="close-btn" id="close-paste-settings">&times;</button>
+                </div>
+                <div class="modal-body paste-settings-body">
+                    <section>
+                        <h4>유지할 서식</h4>
+                        <div class="settings-grid" id="paste-toggle-list">
+                            <label class="toggle-pill">
+                                <input type="checkbox" data-paste-toggle="keepBold">
+                                <span>굵게 유지</span>
+                            </label>
+                            <label class="toggle-pill">
+                                <input type="checkbox" data-paste-toggle="keepItalic">
+                                <span>기울임 유지</span>
+                            </label>
+                            <label class="toggle-pill">
+                                <input type="checkbox" data-paste-toggle="keepUnderline">
+                                <span>밑줄 유지</span>
+                            </label>
+                            <label class="toggle-pill">
+                                <input type="checkbox" data-paste-toggle="keepColors">
+                                <span>글자색 유지</span>
+                            </label>
+                            <label class="toggle-pill">
+                                <input type="checkbox" data-paste-toggle="keepBackgrounds">
+                                <span>배경색 유지</span>
+                            </label>
+                            <label class="toggle-pill">
+                                <input type="checkbox" data-paste-toggle="keepAlignment">
+                                <span>정렬 유지</span>
+                            </label>
+                        </div>
+                    </section>
+                    <section>
+                        <h4>기본 모드</h4>
+                        <select id="paste-default-mode">
+                            <option value="clean">서식 유지</option>
+                            <option value="plain">텍스트만</option>
+                            <option value="table">표로 변환</option>
+                        </select>
+                    </section>
+                    <section>
+                        <h4>Word 스타일 매핑</h4>
+                        <div class="style-map-table" id="word-style-table"></div>
+                        <button class="ghost-btn" id="add-style-map-row">행 추가</button>
+                    </section>
+                </div>
+                <div class="modal-actions">
+                    <button class="ghost-btn" id="paste-settings-reset">기본값</button>
+                    <div>
+                        <button class="save-btn" id="paste-settings-save">저장</button>
+                        <button class="cancel-btn" id="paste-settings-cancel">취소</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- 엑셀 붙여넣기 모달 -->
+    <div class="modal" id="excel-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>엑셀 표 붙여넣기</h3>
+                <button class="close-btn" id="close-excel">&times;</button>
+            </div>
+            <div class="modal-body excel-modal-body">
+                <p class="excel-tip">엑셀에서 원하는 범위를 복사 후 아래 입력창에 붙여넣으면 자동으로 Markdown 표로 변환됩니다.</p>
+                <label class="excel-option">
+                    <input type="checkbox" id="excel-has-header" checked>
+                    첫 번째 행을 표 머리글로 사용
+                </label>
+                <textarea id="excel-input" placeholder="엑셀 데이터를 붙여넣으면 자동으로 분석합니다."></textarea>
+                <div class="excel-preview">
+                    <div class="excel-preview-header">
+                        <h4>미리보기</h4>
+                        <button class="copy-btn" id="copy-excel-html">HTML 복사</button>
+                    </div>
+                    <div id="excel-preview" class="excel-preview-body">표 데이터를 붙여넣으면 결과가 표시됩니다.</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="save-btn" id="insert-excel-table">문서에 삽입</button>
+                    <button class="cancel-btn" id="cancel-excel">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
