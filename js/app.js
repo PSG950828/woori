@@ -5081,9 +5081,71 @@ class InfrastructureManual {
         navData.forEach((section, sectionIndex) => {
             const wrapper = document.createElement('div');
             wrapper.className = 'expandable-section';
+            wrapper.dataset.sectionIndex = String(sectionIndex);
 
             const header = document.createElement('div');
             header.className = 'section-header';
+
+            if (canRenameNavigation) {
+                wrapper.draggable = true;
+                wrapper.classList.add('draggable-section');
+
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'section-drag-handle';
+                dragHandle.title = '드래그해서 순서 변경';
+                dragHandle.setAttribute('aria-hidden', 'true');
+                dragHandle.textContent = '⋮⋮';
+                header.appendChild(dragHandle);
+
+                wrapper.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ kind: 'section', fromIndex: sectionIndex }));
+                    this._dragKind = 'section';
+                    wrapper.classList.add('dragging');
+                });
+
+                wrapper.addEventListener('dragend', () => {
+                    this._dragKind = null;
+                    this._dragSectionId = null;
+                    wrapper.classList.remove('dragging');
+                    this.navContainer.querySelectorAll('.drag-over').forEach(el => {
+                        el.classList.remove('drag-over');
+                    });
+                });
+
+                wrapper.addEventListener('dragover', (e) => {
+                    if (this._dragKind !== 'section') return;
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (!wrapper.classList.contains('dragging')) {
+                        wrapper.classList.add('drag-over');
+                    }
+                });
+
+                wrapper.addEventListener('dragleave', (e) => {
+                    if (!wrapper.contains(e.relatedTarget)) {
+                        wrapper.classList.remove('drag-over');
+                    }
+                });
+
+                wrapper.addEventListener('drop', (e) => {
+                    if (this._dragKind !== 'section') return;
+                    e.preventDefault();
+                    wrapper.classList.remove('drag-over');
+                    let data;
+                    try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch { return; }
+                    if (!data || data.kind !== 'section') return;
+                    const fromIndex = data.fromIndex;
+                    const toIndex = sectionIndex;
+                    if (fromIndex === toIndex) return;
+                    if (InfrastructureData.reorderNavigationSection(fromIndex, toIndex)) {
+                        this.saveToStorage();
+                        this.buildNavigation();
+                        this.renderManagerList?.(this.managerSearchInput?.value || '');
+                        this.showSuccess('목차 순서가 변경되었습니다.');
+                    }
+                });
+            }
 
             const button = document.createElement('button');
             button.className = 'section-toggle';
@@ -5160,8 +5222,71 @@ class InfrastructureManual {
             } else {
                 section.items.forEach((item, itemIndex) => {
                     const li = document.createElement('li');
+                    li.dataset.itemIndex = String(itemIndex);
                     const row = document.createElement('div');
                     row.className = 'sub-menu-row';
+
+                    if (canRenameNavigation) {
+                        li.draggable = true;
+                        li.classList.add('draggable-item');
+
+                        const itemGrip = document.createElement('span');
+                        itemGrip.className = 'item-drag-handle';
+                        itemGrip.title = '드래그해서 순서 변경';
+                        itemGrip.setAttribute('aria-hidden', 'true');
+                        itemGrip.textContent = '⋮⋮';
+                        row.appendChild(itemGrip);
+
+                        li.addEventListener('dragstart', (e) => {
+                            e.stopPropagation();
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', JSON.stringify({ kind: 'item', sectionId: section.id, fromIndex: itemIndex }));
+                            this._dragKind = 'item';
+                            this._dragSectionId = section.id;
+                            li.classList.add('dragging');
+                        });
+
+                        li.addEventListener('dragend', () => {
+                            this._dragKind = null;
+                            this._dragSectionId = null;
+                            li.classList.remove('dragging');
+                            subMenu.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+                        });
+
+                        li.addEventListener('dragover', (e) => {
+                            if (this._dragKind !== 'item' || this._dragSectionId !== section.id) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.dataTransfer.dropEffect = 'move';
+                            if (!li.classList.contains('dragging')) {
+                                li.classList.add('drag-over');
+                            }
+                        });
+
+                        li.addEventListener('dragleave', (e) => {
+                            if (!li.contains(e.relatedTarget)) {
+                                li.classList.remove('drag-over');
+                            }
+                        });
+
+                        li.addEventListener('drop', (e) => {
+                            if (this._dragKind !== 'item' || this._dragSectionId !== section.id) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            li.classList.remove('drag-over');
+                            let data;
+                            try { data = JSON.parse(e.dataTransfer.getData('text/plain')); } catch { return; }
+                            if (!data || data.kind !== 'item' || data.sectionId !== section.id) return;
+                            const fromIndex = data.fromIndex;
+                            const toIndex = itemIndex;
+                            if (fromIndex === toIndex) return;
+                            if (InfrastructureData.reorderNavigationItem(section.id, fromIndex, toIndex)) {
+                                this.saveToStorage();
+                                this.buildNavigation();
+                                this.showSuccess('문서 순서가 변경되었습니다.');
+                            }
+                        });
+                    }
 
                     const link = document.createElement('a');
                     link.href = `#${item.key}`;

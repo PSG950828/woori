@@ -722,6 +722,38 @@ mysqldump --all-databases --single-transaction --routines --triggers >
         return section;
     },
 
+    reorderNavigationItem: function(sectionId, fromIndex, toIndex) {
+        const section = this.findSectionById(sectionId);
+        if (!section) return false;
+        const len = section.items.length;
+        if (
+            !Number.isInteger(fromIndex) || !Number.isInteger(toIndex) ||
+            fromIndex < 0 || toIndex < 0 ||
+            fromIndex >= len || toIndex >= len ||
+            fromIndex === toIndex
+        ) {
+            return false;
+        }
+        const [moved] = section.items.splice(fromIndex, 1);
+        section.items.splice(toIndex, 0, moved);
+        return true;
+    },
+
+    reorderNavigationSection: function(fromIndex, toIndex) {
+        const len = this.navigation.length;
+        if (
+            !Number.isInteger(fromIndex) || !Number.isInteger(toIndex) ||
+            fromIndex < 0 || toIndex < 0 ||
+            fromIndex >= len || toIndex >= len ||
+            fromIndex === toIndex
+        ) {
+            return false;
+        }
+        const [moved] = this.navigation.splice(fromIndex, 1);
+        this.navigation.splice(toIndex, 0, moved);
+        return true;
+    },
+
     renameNavigationSection: function(sectionId, title) {
         const section = this.findSectionById(sectionId);
         if (!section) return false;
