@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 
 const stateStore = require('./services/stateStore');
 const authStore = require('./services/authStore');
+const pcStatusStore = require('./services/pcStatusStore');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
@@ -197,6 +198,56 @@ app.post('/api/state', authenticateRequest, requireAdmin, async (req, res) => {
     } catch (error) {
         console.error('[API] 상태 저장 실패:', error);
         return res.status(500).json({ error: 'STATE_SAVE_FAILED' });
+    }
+});
+
+// =============================================================================
+// PC 상태 관제 API — devices 의 ip 를 ping 으로 확인한 "네트워크 응답 상태"를 제공.
+// 전원 상태가 아니며, offline 은 "응답 없음"을 의미한다.
+// =============================================================================
+
+// 전체 장비 상태 목록 — 저장된 최신 상태만 반환 (체크는 수행하지 않음)
+app.get('/api/pc-status', authenticateRequest, (req, res) => {
+    try {
+        return res.json({ devices: pcStatusStore.getAll() });
+    } catch (error) {
+        console.error('[PC상태] 목록 조회 실패:', error);
+        return res.status(500).json({ error: 'PC_STATUS_FETCH_FAILED' });
+    }
+});
+
+// 상태 요약 — 전체/온라인/확인중/응답지연/응답없음/체크제외 개수
+app.get('/api/pc-status/summary', authenticateRequest, (req, res) => {
+    try {
+        return res.json({ summary: pcStatusStore.getSummary() });
+    } catch (error) {
+        console.error('[PC상태] 요약 조회 실패:', error);
+        return res.status(500).json({ error: 'PC_STATUS_SUMMARY_FAILED' });
+    }
+});
+
+// 전체 장비 수동 체크 — 비동기 + 동시 실행 수 제한 (70대 이상이어도 멈추지 않음)
+app.post('/api/pc-status/check', authenticateRequest, async (req, res) => {
+    try {
+        const devices = await pcStatusStore.checkAll();
+        return res.json({ devices, summary: pcStatusStore.getSummary() });
+    } catch (error) {
+        console.error('[PC상태] 전체 체크 실패:', error);
+        return res.status(500).json({ error: 'PC_STATUS_CHECK_FAILED' });
+    }
+});
+
+// 특정 장비만 수동 체크
+app.post('/api/pc-status/check/:id', authenticateRequest, async (req, res) => {
+    try {
+        const device = await pcStatusStore.checkOne(req.params.id);
+        if (!device) {
+            return res.status(404).json({ error: 'DEVICE_NOT_FOUND' });
+        }
+        return res.json({ device });
+    } catch (error) {
+        console.error('[PC상태] 장비 체크 실패:', error);
+        return res.status(500).json({ error: 'PC_STATUS_CHECK_FAILED' });
     }
 });
 

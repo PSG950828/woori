@@ -2693,7 +2693,14 @@ class InfrastructureManual {
         this.renderQuickLinks();
         this.setupSettingsModalEvents();
         this.setupHomeShortcuts();
+        this.initStatusMonitor();
         this.syncFromServer();
+    }
+
+    initStatusMonitor() {
+        if (typeof InfraStatusMonitor === 'undefined') return;
+        this.statusMonitor = new InfraStatusMonitor(this);
+        this.statusMonitor.render();
     }
 
     // 이벤트 리스너 설정
@@ -3242,6 +3249,7 @@ class InfrastructureManual {
         }
         this.updateEditPermissions();
         this.refreshNavigationAccessState();
+        this.statusMonitor?.refresh();
     }
 
     updateEditPermissions() {
@@ -3685,6 +3693,134 @@ class InfrastructureManual {
             this.buildNavigation();
             this.renderManagerList(this.managerSearchInput?.value || '');
             this.showSuccess('목차 이름이 변경되었습니다.');
+        };
+
+        if (!this.guardAdmin(perform)) return;
+        perform();
+    }
+
+    beginInlineRenameSection(sectionId) {
+        const perform = () => {
+            const section = InfrastructureData.findSectionById(sectionId);
+            if (!section) {
+                this.showError('목차를 찾을 수 없습니다.');
+                return;
+            }
+            const button = this.navContainer?.querySelector(`.section-toggle[data-section="${sectionId}"]`);
+            if (!button) return;
+            const titleSpan = button.querySelector('.section-title-text');
+            if (!titleSpan) return;
+            if (button.querySelector('.inline-rename-input')) return;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'inline-rename-input';
+            input.value = section.title;
+            input.setAttribute('aria-label', '목차 이름');
+            input.maxLength = 120;
+
+            let finished = false;
+            const finish = (save) => {
+                if (finished) return;
+                finished = true;
+                const newTitle = input.value.trim();
+                if (!save || !newTitle || newTitle === section.title) {
+                    if (input.parentNode) input.replaceWith(titleSpan);
+                    return;
+                }
+                InfrastructureData.renameNavigationSection(sectionId, newTitle);
+                this.saveToStorage();
+                this.buildNavigation();
+                this.renderManagerList?.(this.managerSearchInput?.value || '');
+                this.showSuccess('목차 이름이 변경되었습니다.');
+            };
+
+            input.addEventListener('click', (e) => e.stopPropagation());
+            input.addEventListener('mousedown', (e) => e.stopPropagation());
+            input.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finish(true);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    finish(false);
+                }
+            });
+            input.addEventListener('blur', () => finish(true));
+
+            titleSpan.replaceWith(input);
+            input.focus();
+            input.select();
+        };
+
+        if (!this.guardAdmin(perform)) return;
+        perform();
+    }
+
+    beginInlineRenameContent(contentKey) {
+        const perform = () => {
+            const content = InfrastructureData.content[contentKey];
+            const match = InfrastructureData.findSectionByContentKey(contentKey);
+            if (!content || !match) {
+                this.showError('문서를 찾을 수 없습니다.');
+                return;
+            }
+            const link = this.navContainer?.querySelector(`a[data-content="${contentKey}"]`);
+            if (!link) return;
+            const titleSpan = link.querySelector('.nav-link-title');
+            if (!titleSpan) return;
+            if (link.querySelector('.inline-rename-input')) return;
+
+            const currentTitle = match.section.items[match.itemIndex]?.title || content.title;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'inline-rename-input';
+            input.value = currentTitle;
+            input.setAttribute('aria-label', '문서 이름');
+            input.maxLength = 200;
+
+            let finished = false;
+            const finish = (save) => {
+                if (finished) return;
+                finished = true;
+                const newTitle = input.value.trim();
+                if (!save || !newTitle || newTitle === currentTitle) {
+                    if (input.parentNode) input.replaceWith(titleSpan);
+                    return;
+                }
+                InfrastructureData.renameNavigationItem(contentKey, newTitle);
+                InfrastructureData.updateContentTitle(contentKey, newTitle);
+                this.saveToStorage();
+                this.buildNavigation();
+                this.refreshNavigationAccessState?.();
+                if (this.currentContent === contentKey) {
+                    this.updateBreadcrumb(newTitle);
+                }
+                this.showSuccess('문서 이름이 변경되었습니다.');
+            };
+
+            input.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+            });
+            input.addEventListener('mousedown', (e) => e.stopPropagation());
+            input.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finish(true);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    finish(false);
+                }
+            });
+            input.addEventListener('blur', () => finish(true));
+
+            titleSpan.replaceWith(input);
+            input.focus();
+            input.select();
         };
 
         if (!this.guardAdmin(perform)) return;
@@ -5152,7 +5288,7 @@ class InfrastructureManual {
             button.dataset.section = section.id;
             button.innerHTML = `
                 <span class="toggle-icon">▶</span>
-                <span>${sectionIndex + 1} ${section.title}</span>
+                <span class="section-title-text">${sectionIndex + 1} ${this.escapeHtml(section.title)}</span>
             `;
             if (this.expandedSections.has(section.id)) {
                 button.classList.add('active');
@@ -5183,7 +5319,7 @@ class InfrastructureManual {
             if (canRenameNavigation) {
                 renameBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.renameSectionPrompt(section.id);
+                    this.beginInlineRenameSection(section.id);
                 });
             } else {
                 renameBtn.disabled = true;
@@ -5321,7 +5457,7 @@ class InfrastructureManual {
                         renameItemBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            this.renameContentPrompt(item.key);
+                            this.beginInlineRenameContent(item.key);
                         });
                     } else {
                         renameItemBtn.disabled = true;
@@ -6033,6 +6169,1045 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// =============================================================================
+// 인프라 상태 관제 (홈 화면 중앙 3D 맵)
+// =============================================================================
+
+// 외부에서 들어오는 status가 문자열이 아닐 가능성에 대비한 정규화.
+// 허용 값: online | checking | delayed | offline | disabled.
+function normalizeStatus(input) {
+    const allowed = ['online', 'checking', 'delayed', 'offline', 'disabled'];
+    if (typeof input === 'string') {
+        return allowed.includes(input) ? input : 'checking';
+    }
+    if (input && typeof input === 'object') {
+        const candidate = (typeof input.value === 'string' && input.value)
+            || (typeof input.key === 'string' && input.key)
+            || (typeof input.status === 'string' && input.status)
+            || (typeof input.name === 'string' && input.name);
+        if (candidate && allowed.includes(candidate)) return candidate;
+    }
+    return 'checking';
+}
+
+// floor / type / name / dept 가 객체로 들어와도 문자열로 평탄화한다.
+function coerceLabel(input, fallback) {
+    if (input == null) return fallback;
+    if (typeof input === 'string' || typeof input === 'number') return String(input);
+    if (typeof input === 'object') {
+        return input.label || input.name || input.value || input.id || fallback;
+    }
+    return fallback;
+}
+
+// floor 값을 항상 "1F"~"7F" 문자열 또는 null 로 정규화.
+// 알 수 없는 floor 는 null (= 층 미지정) 처리.
+function coerceFloor(input) {
+    if (input == null) return null;
+    if (typeof input === 'number') {
+        return (input >= 1 && input <= 7) ? `${input}F` : null;
+    }
+    if (typeof input === 'string') {
+        const m = input.match(/^\s*([1-7])\s*F?\s*$/i);
+        return m ? `${m[1]}F` : null;
+    }
+    if (typeof input === 'object') {
+        return coerceFloor(input.id ?? input.value ?? input.floor ?? input.name);
+    }
+    return null;
+}
+
+// type 값을 허용 목록 중 하나로 정규화. 알 수 없으면 'ETC'.
+const VALID_DEVICE_TYPES = ['PC', 'SERVER', 'NAS', 'DEVICE', 'PRINTER', 'POS', 'CCTV', 'NETWORK', 'UPS', 'ETC', 'UNKNOWN'];
+function normalizeDeviceType(input) {
+    const t = coerceLabel(input, 'ETC').toString().toUpperCase();
+    return VALID_DEVICE_TYPES.includes(t) ? t : 'ETC';
+}
+
+function toFiniteNumber(v) {
+    return (typeof v === 'number' && Number.isFinite(v)) ? v : null;
+}
+
+function normalizeDevice(device, idx) {
+    if (!device || typeof device !== 'object') {
+        return {
+            id: `unknown-${idx}`,
+            name: '이름 없음',
+            ip: '',
+            mac: '',
+            type: 'ETC',
+            floor: null,
+            zone: '미지정',
+            status: 'checking',
+            x: null,
+            y: null,
+            responseMs: null,
+            latencyMs: null,
+            lastCheckedAt: null,
+            lastSuccessAt: null,
+            memo: '',
+            vendor: '',
+            enabled: true
+        };
+    }
+    const responseMs = toFiniteNumber(device.responseMs) ?? toFiniteNumber(device.latencyMs);
+    return {
+        id: String(device.id ?? device.ip ?? `device-${idx}`),
+        name: coerceLabel(device.name, '이름 없음'),
+        ip: typeof device.ip === 'string' ? device.ip : '',
+        mac: typeof device.mac === 'string' ? device.mac : '',
+        type: normalizeDeviceType(device.type),
+        floor: coerceFloor(device.floor),
+        zone: coerceLabel(device.zone ?? device.dept ?? device.department, '미지정'),
+        status: normalizeStatus(device.status),
+        x: toFiniteNumber(device.x),
+        y: toFiniteNumber(device.y),
+        responseMs: responseMs,
+        latencyMs: toFiniteNumber(device.latencyMs) ?? responseMs,
+        lastCheckedAt: typeof device.lastCheckedAt === 'string' ? device.lastCheckedAt : null,
+        lastSuccessAt: typeof device.lastSuccessAt === 'string' ? device.lastSuccessAt : null,
+        memo: typeof device.memo === 'string' ? device.memo : '',
+        vendor: coerceLabel(device.vendor, ''),
+        enabled: device.enabled !== false
+    };
+}
+
+const DEFAULT_STATUS_META_ENTRY = { label: '확인 중', color: '#f3b53a', shortLabel: '확인 중' };
+
+// =============================================================================
+// 장비 위치 좌표 저장소 (API 연결 구조)
+// 현재는 localStorage 임시 저장. 실제 백엔드가 준비되면 아래 세 함수의 본문만
+// fetch 호출로 교체하면 된다. 호출부(InfraStatusMonitor)는 바꿀 필요가 없다.
+//   PUT    /api/pc-status/devices/{id}/position   → saveDevicePosition
+//   DELETE /api/pc-status/devices/{id}/position   → resetDevicePosition
+//   GET    /api/pc-status/device-positions        → loadDevicePositions
+// 반환 형태는 항상 { ok: boolean, data?, error? } — 호출부에서 ok 만 확인하면 된다.
+// =============================================================================
+const DEVICE_POSITION_STORAGE_KEY = 'woori_device_positions';
+
+const DevicePositionAPI = {
+    // localStorage 원본 읽기 — 깨졌거나 없으면 빈 객체
+    _readStore() {
+        try {
+            const raw = localStorage.getItem(DEVICE_POSITION_STORAGE_KEY);
+            if (!raw) return {};
+            const parsed = JSON.parse(raw);
+            return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+        } catch (e) {
+            console.warn('장비 위치 정보를 읽지 못했습니다.', e);
+            return {};
+        }
+    },
+
+    _writeStore(store) {
+        try {
+            localStorage.setItem(DEVICE_POSITION_STORAGE_KEY, JSON.stringify(store));
+            return true;
+        } catch (e) {
+            console.warn('장비 위치 정보를 저장하지 못했습니다.', e);
+            return false;
+        }
+    },
+
+    _formatTimestamp(date) {
+        const d = (date instanceof Date && !isNaN(date)) ? date : new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
+            + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    },
+
+    // PUT /api/pc-status/devices/{id}/position
+    // 좌표를 0~100 범위로 제한해 저장. 숫자가 아니면 저장하지 않는다.
+    saveDevicePosition(deviceId, x, y, floor) {
+        const id = String(deviceId ?? '').trim();
+        if (!id) return { ok: false, error: 'deviceId 가 없습니다.' };
+        const nx = Number(x);
+        const ny = Number(y);
+        if (!Number.isFinite(nx) || !Number.isFinite(ny)) {
+            return { ok: false, error: '좌표가 숫자가 아닙니다.' };
+        }
+        const record = {
+            deviceId: id,
+            floor: (floor == null || floor === '') ? null : String(floor),
+            x: Math.max(0, Math.min(100, nx)),
+            y: Math.max(0, Math.min(100, ny)),
+            updatedAt: this._formatTimestamp(new Date())
+        };
+        const store = this._readStore();
+        store[id] = record;
+        if (!this._writeStore(store)) {
+            return { ok: false, error: '저장에 실패했습니다.' };
+        }
+        return { ok: true, data: record };
+    },
+
+    // DELETE /api/pc-status/devices/{id}/position
+    resetDevicePosition(deviceId) {
+        const id = String(deviceId ?? '').trim();
+        if (!id) return { ok: false, error: 'deviceId 가 없습니다.' };
+        const store = this._readStore();
+        if (Object.prototype.hasOwnProperty.call(store, id)) {
+            delete store[id];
+            if (!this._writeStore(store)) {
+                return { ok: false, error: '초기화에 실패했습니다.' };
+            }
+        }
+        return { ok: true };
+    },
+
+    // GET /api/pc-status/device-positions
+    // 저장된 전체 좌표를 { [deviceId]: record } 형태로 반환. 손상된 항목은 건너뛴다.
+    loadDevicePositions() {
+        const store = this._readStore();
+        const result = {};
+        Object.keys(store).forEach(id => {
+            const rec = store[id];
+            if (!rec || typeof rec !== 'object') return;
+            const x = Number(rec.x);
+            const y = Number(rec.y);
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+            result[id] = {
+                deviceId: String(rec.deviceId ?? id),
+                floor: (rec.floor == null || rec.floor === '') ? null : String(rec.floor),
+                x: Math.max(0, Math.min(100, x)),
+                y: Math.max(0, Math.min(100, y)),
+                updatedAt: typeof rec.updatedAt === 'string' ? rec.updatedAt : null
+            };
+        });
+        return result;
+    }
+};
+
+// =============================================================================
+// 인프라 관제맵 - 평면도 기반 뷰어 (FloorPlanViewer + FloorSelector + ViewModeToggle)
+// =============================================================================
+class InfraStatusMonitor {
+    constructor(app) {
+        this.app = app;
+        const raw = Array.isArray(SAMPLE_INFRA_DEVICES) ? SAMPLE_INFRA_DEVICES : [];
+        this.devices = raw.map((d, i) => normalizeDevice(d, i));
+        // 저장된 좌표를 장비에 반영 — 새로고침 후에도 위치가 유지된다
+        this.applyStoredPositions();
+        this.statusMeta = (typeof STATUS_META !== 'undefined') ? STATUS_META : {};
+        this.floorLabels = (typeof FLOOR_LABELS !== 'undefined') ? FLOOR_LABELS : {};
+        this.floorPlans = (typeof FLOOR_PLANS !== 'undefined') ? FLOOR_PLANS : {};
+        this.floorOrder = (typeof FLOOR_ORDER !== 'undefined' && Array.isArray(FLOOR_ORDER))
+            ? FLOOR_ORDER
+            : ['1F', '2F', '3F', '4F', '5F', '6F', '7F'];
+        this.lastUpdated = new Date();
+        this.selectedFloor = '2F';
+        this.selectedDeviceId = null;
+        this.markerTooltipEl = null;
+        this.placementMode = false;
+        this.deviceListFilter = { query: '', status: 'all', floor: 'all' };
+        // 상태 체크 진행 중 플래그 — 중복 요청/버튼 연타 방지
+        this.isCheckingStatus = false;
+
+        this.summaryEl = document.getElementById('status-summary');
+        this.floorSelectorEl = document.getElementById('floor-selector');
+        this.viewerEl = document.getElementById('floorplan-viewer');
+        this.frameEl = document.getElementById('floorplan-frame');
+        this.imageEl = document.getElementById('floorplan-image');
+        this.placeholderEl = document.getElementById('floorplan-placeholder');
+        this.placeholderSubEl = document.getElementById('floorplan-placeholder-sub');
+        this.captionEl = document.getElementById('floorplan-caption');
+        this.markersEl = document.getElementById('floorplan-markers');
+        this.detailEl = document.getElementById('floorplan-detail');
+        this.zoneSummaryEl = document.getElementById('zone-summary');
+        this.openListBtnEl = document.getElementById('open-device-list');
+        this.lastUpdatedEl = document.getElementById('monitor-last-updated');
+        this.refreshBtnEl = document.getElementById('monitor-refresh');
+
+        this.bindStaticEvents();
+    }
+
+    bindStaticEvents() {
+        // 이미지 로드 성공/실패 처리 (실패해도 앱이 죽지 않고 placeholder 표시)
+        if (this.imageEl) {
+            this.imageEl.addEventListener('error', () => this.showPlaceholder(true));
+            this.imageEl.addEventListener('load', () => {
+                // naturalWidth 0 이면 깨진 이미지로 간주
+                this.showPlaceholder(this.imageEl.naturalWidth === 0);
+            });
+            // 위치 지정 모드: 평면도 이미지 클릭 → 좌표 저장
+            this.imageEl.addEventListener('click', (e) => this.handleFloorPlanClick(e));
+        }
+        // 전체 장비 표 모달
+        if (this.openListBtnEl) {
+            this.openListBtnEl.addEventListener('click', () => this.openDeviceListModal());
+        }
+    }
+
+    getStatusMeta(statusInput) {
+        const status = normalizeStatus(statusInput);
+        return this.statusMeta[status] || DEFAULT_STATUS_META_ENTRY;
+    }
+
+    isAdmin() {
+        return Boolean(this.app?.canEdit);
+    }
+
+    formatTimestamp(date) {
+        if (!date) return '—';
+        const d = (date instanceof Date) ? date : new Date(date);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    // floor 입력이 객체/숫자/문자열 무엇이든 "1F"~"7F" 또는 null 로 정규화
+    normalizeFloorKey(input) {
+        const f = coerceFloor(input);
+        return (f && this.floorOrder.includes(f)) ? f : null;
+    }
+
+    render() {
+        if (!this.viewerEl && !this.summaryEl) return;
+        this.renderSummary();
+        this.renderFloorSelector();
+        this.renderFloorPlan();
+        this.renderZoneSummary();
+        this.renderDeviceDetailFromSelection();
+        if (this.lastUpdatedEl) {
+            this.lastUpdatedEl.textContent = this.formatTimestamp(this.lastUpdated);
+        }
+    }
+
+    refresh() {
+        this.render();
+    }
+
+    countByStatus(devices) {
+        const list = Array.isArray(devices) ? devices : this.devices;
+        const counts = { online: 0, checking: 0, delayed: 0, offline: 0, disabled: 0 };
+        list.forEach(d => {
+            const s = normalizeStatus(d.status);
+            if (counts[s] != null) counts[s]++;
+        });
+        return counts;
+    }
+
+    renderSummary() {
+        if (!this.summaryEl) return;
+        const counts = this.countByStatus();
+        const total = this.devices.length;
+        const cards = [
+            { key: 'total',    label: '전체 장비', value: total },
+            { key: 'online',   label: this.getStatusMeta('online').label,   value: counts.online },
+            { key: 'checking', label: this.getStatusMeta('checking').label, value: counts.checking },
+            { key: 'delayed',  label: this.getStatusMeta('delayed').label,  value: counts.delayed },
+            { key: 'offline',  label: this.getStatusMeta('offline').label,  value: counts.offline },
+            { key: 'disabled', label: this.getStatusMeta('disabled').label, value: counts.disabled }
+        ];
+        this.summaryEl.innerHTML = cards.map(c => `
+            <div class="stat-card stat-${c.key}" role="listitem">
+                <span class="stat-label">${this.app.escapeHtml(c.label)}</span>
+                <span class="stat-value">${c.value}<span class="stat-unit">대</span></span>
+            </div>
+        `).join('');
+    }
+
+    // FloorSelector: 1F~7F 버튼 + 상태 배지
+    renderFloorSelector() {
+        if (!this.floorSelectorEl) return;
+        this.floorSelectorEl.innerHTML = this.floorOrder.map(floor => {
+            const devices = this.devices.filter(d => d.floor === floor);
+            const counts = this.countByStatus(devices);
+            const isSelected = this.selectedFloor === floor;
+            let badge = '';
+            if (counts.offline > 0) {
+                badge = `<span class="floor-badge badge-offline" title="응답 없음 ${counts.offline}대">${counts.offline}</span>`;
+            } else if (counts.checking >= 3) {
+                badge = `<span class="floor-badge badge-checking" title="확인 중 ${counts.checking}대">${counts.checking}</span>`;
+            }
+            return `
+                <button type="button"
+                        class="floor-tab${isSelected ? ' active' : ''}"
+                        data-floor="${this.app.escapeHtml(floor)}"
+                        role="tab"
+                        aria-selected="${isSelected}">
+                    <span class="floor-tab-label">${this.app.escapeHtml(floor)}</span>
+                    <span class="floor-tab-count">${devices.length}대</span>
+                    ${badge}
+                </button>
+            `;
+        }).join('');
+        this.floorSelectorEl.querySelectorAll('.floor-tab').forEach(btn => {
+            btn.addEventListener('click', () => this.selectFloor(btn.dataset.floor));
+        });
+    }
+
+    selectFloor(floorInput) {
+        const floor = this.normalizeFloorKey(floorInput);
+        if (!floor) return;
+        this.selectedFloor = floor;
+        // 층을 바꾸면 진행 중이던 위치 지정 모드는 해제한다
+        this.placementMode = false;
+        this.frameEl?.classList.remove('placement-mode');
+        this.render();
+    }
+
+    showPlaceholder(show) {
+        if (this.placeholderEl) this.placeholderEl.hidden = !show;
+        if (this.imageEl) this.imageEl.style.visibility = show ? 'hidden' : 'visible';
+    }
+
+    // FloorPlanViewer: 선택한 층 평면도 이미지 + 캡션
+    renderFloorPlan() {
+        if (!this.viewerEl) return;
+        const floor = this.normalizeFloorKey(this.selectedFloor) || this.floorOrder[0];
+        const plan = this.floorPlans[floor] || {};
+        const devices = this.devices.filter(d => d.floor === floor);
+        const counts = this.countByStatus(devices);
+
+        // 캡션
+        if (this.captionEl) {
+            const label = coerceLabel(plan.label, floor);
+            const zoneTitle = coerceLabel(this.floorLabels[floor]?.title, '');
+            this.captionEl.innerHTML = `
+                <strong>${this.app.escapeHtml(label)} 평면도</strong>
+                ${zoneTitle ? `<span class="caption-zones">${this.app.escapeHtml(zoneTitle)}</span>` : ''}
+                <span class="caption-counts">장비 ${devices.length}대 · 온라인 ${counts.online} · 응답 없음 ${counts.offline}</span>
+            `;
+        }
+
+        // 이미지 로드 (실패 시 error 이벤트 → placeholder)
+        if (this.imageEl) {
+            const src = (typeof plan.image === 'string') ? plan.image : '';
+            if (src) {
+                this.imageEl.alt = `${coerceLabel(plan.label, floor)} 평면도`;
+                if (this.imageEl.getAttribute('src') !== src) {
+                    this.showPlaceholder(false);
+                    this.imageEl.setAttribute('src', src);
+                } else if (this.imageEl.complete && this.imageEl.naturalWidth === 0) {
+                    this.showPlaceholder(true);
+                }
+            } else {
+                this.imageEl.removeAttribute('src');
+                this.showPlaceholder(true);
+            }
+        }
+        if (this.placeholderSubEl) {
+            const src = (typeof plan.image === 'string' && plan.image) ? plan.image : '경로 미정';
+            this.placeholderSubEl.textContent = `${src} 경로를 확인해주세요.`;
+        }
+
+        // 좌표(x, y)가 있는 장비만 평면도 위 마커로 표시. 나머지는 구역 요약에 포함.
+        const { positioned } = this.partitionByPosition(devices);
+        this.renderDeviceMarkers(positioned);
+    }
+
+    // 좌표 유무로 장비 분리 — positioned 는 추후 평면도 마커 렌더링용
+    partitionByPosition(devices) {
+        const positioned = [];
+        const unpositioned = [];
+        (Array.isArray(devices) ? devices : []).forEach(d => {
+            const hasXY = d && Number.isFinite(d.x) && Number.isFinite(d.y);
+            (hasXY ? positioned : unpositioned).push(d);
+        });
+        return { positioned, unpositioned };
+    }
+
+    // 평면도 위 개별 마커 — x, y 좌표(0~100 백분율)가 있는 장비만 표시.
+    // 좌표가 없는 장비는 partitionByPosition 단계에서 이미 제외된다.
+    renderDeviceMarkers(devices) {
+        if (!this.markersEl) return;
+        const list = Array.isArray(devices) ? devices : [];
+        this.markersEl.innerHTML = list.map((d, i) => {
+            const status = normalizeStatus(d?.status);
+            const x = Math.max(0, Math.min(100, toFiniteNumber(d?.x) ?? 0));
+            const y = Math.max(0, Math.min(100, toFiniteNumber(d?.y) ?? 0));
+            const name = coerceLabel(d?.name, '장비');
+            const id = String(d?.id ?? `marker-${i}`);
+            const isSelected = this.selectedDeviceId != null && id === this.selectedDeviceId;
+            return `<button type="button"
+                        class="device-marker status-${status}${isSelected ? ' is-selected' : ''}"
+                        style="left:${x}%;top:${y}%"
+                        data-device-id="${this.app.escapeHtml(id)}"
+                        aria-label="${this.app.escapeHtml(name)}"></button>`;
+        }).join('');
+
+        this.markersEl.querySelectorAll('.device-marker').forEach(btn => {
+            const id = btn.dataset.deviceId;
+            const device = list.find((d, i) => String(d?.id ?? `marker-${i}`) === id) || null;
+            btn.addEventListener('mouseenter', () => this.showMarkerTooltip(btn, device));
+            btn.addEventListener('mouseleave', () => this.hideMarkerTooltip());
+            btn.addEventListener('focus', () => this.showMarkerTooltip(btn, device));
+            btn.addEventListener('blur', () => this.hideMarkerTooltip());
+            btn.addEventListener('click', () => this.selectDevice(device));
+        });
+    }
+
+    ensureMarkerTooltip() {
+        if (this.markerTooltipEl) return this.markerTooltipEl;
+        if (!this.viewerEl) return null;
+        const el = document.createElement('div');
+        el.className = 'device-marker-tooltip';
+        el.hidden = true;
+        this.viewerEl.appendChild(el);
+        this.markerTooltipEl = el;
+        return el;
+    }
+
+    // 마커 hover/focus 시 장비명·IP·상태·구역 표시
+    showMarkerTooltip(markerBtn, device) {
+        const tip = this.ensureMarkerTooltip();
+        if (!tip || !markerBtn || !device) return;
+        const status = normalizeStatus(device.status);
+        const meta = this.getStatusMeta(status);
+        const name = this.app.escapeHtml(coerceLabel(device.name, '장비'));
+        const ip = this.app.escapeHtml(device.ip || '—');
+        const zone = this.app.escapeHtml(coerceLabel(device.zone, '미지정'));
+        tip.innerHTML = `
+            <span class="marker-tip-name">${name}</span>
+            <span class="marker-tip-row">IP <code>${ip}</code></span>
+            <span class="marker-tip-row">상태 <span class="status-dot status-${status}"></span>${this.app.escapeHtml(meta.label)}</span>
+            <span class="marker-tip-row">구역 ${zone}</span>
+        `;
+        tip.hidden = false;
+        // viewer 기준 좌표로 배치 — getBoundingClientRect 는 3D 변형이 적용된 화면 좌표를 반환
+        const viewerRect = this.viewerEl.getBoundingClientRect();
+        const markerRect = markerBtn.getBoundingClientRect();
+        tip.style.left = `${markerRect.left + markerRect.width / 2 - viewerRect.left}px`;
+        tip.style.top = `${markerRect.top - viewerRect.top}px`;
+    }
+
+    hideMarkerTooltip() {
+        if (this.markerTooltipEl) this.markerTooltipEl.hidden = true;
+    }
+
+    // 마커 클릭 → 우측 상세 패널에 장비 정보 표시
+    selectDevice(device) {
+        if (!device) return;
+        this.selectedDeviceId = String(device.id ?? '');
+        this.renderDeviceDetail(device);
+        if (this.markersEl) {
+            this.markersEl.querySelectorAll('.device-marker').forEach(btn => {
+                btn.classList.toggle('is-selected', btn.dataset.deviceId === this.selectedDeviceId);
+            });
+        }
+    }
+
+    // 현재 선택된 장비 객체를 반환 (없으면 null)
+    getSelectedDevice() {
+        if (this.selectedDeviceId == null) return null;
+        return this.devices.find(d => String(d.id) === this.selectedDeviceId) || null;
+    }
+
+    // id 로 장비를 선택 — 장비 목록 행 클릭에서 사용. 해당 장비의 층으로 평면도를 전환한다.
+    selectDeviceById(deviceId) {
+        const id = String(deviceId ?? '');
+        const device = this.devices.find(d => String(d.id) === id);
+        if (!device) return;
+        this.selectedDeviceId = id;
+        const floor = this.normalizeFloorKey(device.floor);
+        if (floor) this.selectedFloor = floor;
+        this.render();
+    }
+
+    // 장비에 평면도 좌표(x, y)가 모두 있는지 검사
+    deviceHasPosition(device) {
+        return Boolean(device) && Number.isFinite(device.x) && Number.isFinite(device.y);
+    }
+
+    // 0~100 범위로 자르고 소수점 1자리로 반올림
+    clampPercent(value) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return 0;
+        const clamped = Math.max(0, Math.min(100, n));
+        return Math.round(clamped * 10) / 10;
+    }
+
+    // 저장소(localStorage / 추후 API)의 좌표를 현재 장비 목록에 반영.
+    // 실패하더라도 앱이 죽지 않도록 try/catch 로 감싼다.
+    applyStoredPositions() {
+        let positions = {};
+        try {
+            positions = DevicePositionAPI.loadDevicePositions() || {};
+        } catch (e) {
+            console.warn('저장된 장비 위치를 불러오지 못했습니다.', e);
+            positions = {};
+        }
+        this.devices.forEach(d => {
+            const rec = positions[String(d.id)];
+            if (rec && Number.isFinite(rec.x) && Number.isFinite(rec.y)) {
+                d.x = this.clampPercent(rec.x);
+                d.y = this.clampPercent(rec.y);
+            }
+        });
+    }
+
+    // 위치 지정 모드 시작 — 관리자 전용, 선택된 장비가 없으면 켜지지 않는다
+    startPlacementMode() {
+        if (!this.isAdmin()) return;
+        if (!this.getSelectedDevice()) return;
+        this.placementMode = true;
+        this.frameEl?.classList.add('placement-mode');
+        this.hideMarkerTooltip();
+        this.renderDeviceDetailFromSelection();
+    }
+
+    // 위치 지정 모드 종료/취소
+    cancelPlacementMode() {
+        this.placementMode = false;
+        this.frameEl?.classList.remove('placement-mode');
+        this.renderDeviceDetailFromSelection();
+    }
+
+    // 평면도 이미지 클릭 → 선택 장비의 x, y 를 퍼센트 좌표로 저장 (위치 지정 모드일 때만)
+    handleFloorPlanClick(event) {
+        if (!this.placementMode) return;
+        if (!this.isAdmin()) {
+            this.cancelPlacementMode();
+            return;
+        }
+        const device = this.getSelectedDevice();
+        if (!device) {
+            this.cancelPlacementMode();
+            return;
+        }
+        const img = this.imageEl;
+        if (!img) return;
+        const width = img.clientWidth;
+        const height = img.clientHeight;
+        // 이미지가 없거나 깨졌으면 좌표 계산 불가 → 무시
+        if (!width || !height) return;
+        // offsetX/offsetY 는 3D 변형 이전의 이미지 로컬 좌표를 반환한다
+        const localX = event.offsetX;
+        const localY = event.offsetY;
+        // 평면도 이미지 영역 밖 클릭은 무시
+        if (localX < 0 || localY < 0 || localX > width || localY > height) return;
+
+        // x, y 계산 (0~100 백분율)
+        const x = this.clampPercent(localX / width * 100);
+        const y = this.clampPercent(localY / height * 100);
+        // 숫자가 아니면 저장하지 않는다
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+        // 저장소(현재 localStorage, 추후 API)에 좌표 저장
+        let result;
+        try {
+            result = DevicePositionAPI.saveDevicePosition(device.id, x, y, device.floor);
+        } catch (e) {
+            console.warn('장비 위치 저장 중 오류가 발생했습니다.', e);
+            result = { ok: false };
+        }
+        if (!result || !result.ok) {
+            // 저장 실패 시에도 앱이 죽지 않도록 — 위치 지정 모드만 해제하고 알린다
+            this.placementMode = false;
+            this.frameEl?.classList.remove('placement-mode');
+            this.renderDeviceDetailFromSelection();
+            this.app?.showError?.('장비 위치 저장에 실패했습니다. 다시 시도해주세요.');
+            return;
+        }
+
+        // 저장 성공 → selectedDevice 의 좌표 갱신, 위치 지정 모드 종료
+        device.x = x;
+        device.y = y;
+        this.placementMode = false;
+        this.frameEl?.classList.remove('placement-mode');
+        // 기존 마커 표시 로직 재사용 — 좌표가 생긴 장비가 마커로 나타난다
+        this.renderFloorPlan();
+        this.renderDeviceDetailFromSelection();
+        this.app?.showSuccess?.(`장비 위치를 저장했습니다. (x: ${x}% / y: ${y}%)`);
+    }
+
+    // 선택된 장비의 좌표를 제거 — 마커가 사라지고 다시 구역 요약 배지에 포함된다
+    resetSelectedDevicePosition() {
+        if (!this.isAdmin()) return;
+        const device = this.getSelectedDevice();
+        if (!device) return;
+
+        let result;
+        try {
+            result = DevicePositionAPI.resetDevicePosition(device.id);
+        } catch (e) {
+            console.warn('장비 위치 초기화 중 오류가 발생했습니다.', e);
+            result = { ok: false };
+        }
+        if (!result || !result.ok) {
+            this.app?.showError?.('장비 위치 초기화에 실패했습니다. 다시 시도해주세요.');
+            return;
+        }
+
+        device.x = null;
+        device.y = null;
+        this.placementMode = false;
+        this.frameEl?.classList.remove('placement-mode');
+        this.renderFloorPlan();
+        this.renderDeviceDetailFromSelection();
+        this.app?.showSuccess?.('장비 위치를 초기화했습니다.');
+    }
+
+    renderDeviceDetailFromSelection() {
+        if (!this.detailEl) return;
+        this.renderDeviceDetail(this.getSelectedDevice());
+    }
+
+    renderDeviceDetail(device) {
+        if (!this.detailEl) return;
+        if (!device) {
+            this.detailEl.innerHTML = `<p class="floorplan-detail-empty">평면도의 마커를 클릭하면 장비 정보가 표시됩니다.</p>`;
+            return;
+        }
+        const status = normalizeStatus(device.status);
+        const meta = this.getStatusMeta(status);
+        const name = this.app.escapeHtml(coerceLabel(device.name, '이름 없음'));
+        const ip = this.app.escapeHtml(device.ip || '—');
+        const type = this.app.escapeHtml(normalizeDeviceType(device.type));
+        const floor = this.app.escapeHtml(coerceFloor(device.floor) || '미지정');
+        const zone = this.app.escapeHtml(coerceLabel(device.zone, '미지정'));
+        const vendor = this.app.escapeHtml(coerceLabel(device.vendor, '—'));
+        const ms = (toFiniteNumber(device.responseMs) != null) ? `${device.responseMs}ms` : '—';
+
+        const hasPos = this.deviceHasPosition(device);
+        // 좌표가 있으면 "위치 지정됨" 배지 + x/y 백분율, 없으면 "위치 미지정"
+        const posBadge = hasPos
+            ? `<span class="floorplan-pos-badge is-set">위치 지정됨</span>`
+              + `<span class="floorplan-pos-coords">x: ${this.clampPercent(device.x)}% / y: ${this.clampPercent(device.y)}%</span>`
+            : `<span class="floorplan-pos-badge is-unset">위치 미지정</span>`;
+
+        let placementControls = '';
+        if (this.isAdmin()) {
+            // 좌표가 있는 장비에만 초기화 버튼 노출
+            const resetBtn = hasPos
+                ? `<button type="button" class="floorplan-place-btn reset" id="floorplan-place-reset">위치 초기화</button>`
+                : '';
+            placementControls = this.placementMode
+                ? `<div class="floorplan-place-controls is-active">
+                        <p class="floorplan-place-hint">평면도에서 장비 위치를 클릭하세요.</p>
+                        <button type="button" class="floorplan-place-btn cancel" id="floorplan-place-cancel">위치 지정 취소</button>
+                   </div>`
+                : `<div class="floorplan-place-controls">
+                        <button type="button" class="floorplan-place-btn" id="floorplan-place-start">위치 지정</button>
+                        ${resetBtn}
+                   </div>`;
+        }
+
+        this.detailEl.innerHTML = `
+            <div class="floorplan-detail-head">
+                <span class="floorplan-detail-status status-${status}" style="--dot-color:${meta.color}"></span>
+                <div>
+                    <strong class="floorplan-detail-name">${name}</strong>
+                    <span class="floorplan-detail-statuslabel">${this.app.escapeHtml(meta.label)}</span>
+                </div>
+            </div>
+            <div class="floorplan-detail-pos">${posBadge}</div>
+            <dl class="floorplan-detail-list">
+                <div><dt>IP</dt><dd><code>${ip}</code></dd></div>
+                <div><dt>유형</dt><dd>${type}</dd></div>
+                <div><dt>층</dt><dd>${floor}</dd></div>
+                <div><dt>구역</dt><dd>${zone}</dd></div>
+                <div><dt>벤더</dt><dd>${vendor}</dd></div>
+                <div><dt>응답</dt><dd>${this.app.escapeHtml(ms)}</dd></div>
+            </dl>
+            ${placementControls}
+        `;
+
+        const startBtn = this.detailEl.querySelector('#floorplan-place-start');
+        if (startBtn) startBtn.addEventListener('click', () => this.startPlacementMode());
+        const cancelBtn = this.detailEl.querySelector('#floorplan-place-cancel');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.cancelPlacementMode());
+        const resetBtn = this.detailEl.querySelector('#floorplan-place-reset');
+        if (resetBtn) resetBtn.addEventListener('click', () => this.resetSelectedDevicePosition());
+    }
+
+    // 선택 층 장비를 zone 기준으로 그룹핑. zone 이 비어있으면 '미지정'.
+    groupDevicesByZone(devices) {
+        const groups = new Map();
+        (Array.isArray(devices) ? devices : []).forEach(d => {
+            const raw = coerceLabel(d?.zone, '미지정');
+            const zone = (typeof raw === 'string' && raw.trim()) ? raw.trim() : '미지정';
+            if (!groups.has(zone)) groups.set(zone, []);
+            groups.get(zone).push(d);
+        });
+        return groups;
+    }
+
+    // 구역별 상태 요약 배지 — 선택한 층의 장비를 zone 으로 묶어 상태 개수를 표시
+    renderZoneSummary() {
+        if (!this.zoneSummaryEl) return;
+        const floor = this.normalizeFloorKey(this.selectedFloor) || this.floorOrder[0];
+        const floorDevices = this.devices.filter(d => d.floor === floor);
+        const groups = this.groupDevicesByZone(floorDevices);
+
+        if (!groups.size) {
+            this.zoneSummaryEl.innerHTML = `<p class="zone-summary-empty">이 층에 등록된 장비가 없습니다.</p>`;
+            return;
+        }
+
+        // 정렬: '미지정' 은 항상 마지막, 나머지는 장비 수 내림차순 → 이름순
+        const entries = [...groups.entries()].sort((a, b) => {
+            if (a[0] === '미지정') return 1;
+            if (b[0] === '미지정') return -1;
+            if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+            return a[0].localeCompare(b[0], 'ko');
+        });
+
+        const statusKeys = ['online', 'checking', 'delayed', 'offline', 'disabled'];
+
+        this.zoneSummaryEl.innerHTML = entries.map(([zone, devices]) => {
+            const counts = this.countByStatus(devices);
+            const hasOffline = counts.offline > 0;
+            const dots = statusKeys
+                .filter(k => counts[k] > 0)
+                .map(k => {
+                    const meta = this.getStatusMeta(k);
+                    return `<span class="zone-stat" title="${this.app.escapeHtml(meta.label)} ${counts[k]}대">
+                                <span class="status-dot status-${k}"></span>${counts[k]}
+                            </span>`;
+                }).join('');
+            return `
+                <div class="zone-card${hasOffline ? ' has-offline' : ''}" role="listitem">
+                    <div class="zone-card-head">
+                        <span class="zone-card-name">${this.app.escapeHtml(zone)}</span>
+                        <span class="zone-card-total">${devices.length}대</span>
+                    </div>
+                    <div class="zone-card-stats">
+                        ${dots || '<span class="zone-stat-empty">상태 정보 없음</span>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    ensureDeviceListModal() {
+        let modal = document.getElementById('device-list-modal');
+        if (modal) return modal;
+
+        modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'device-list-modal';
+        modal.innerHTML = `
+            <div class="modal-content device-list-modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h3>전체 장비 상태</h3>
+                        <p class="modal-subtitle">우리안과 네트워크에 등록된 모든 장비의 현재 응답 상태를 확인합니다.</p>
+                    </div>
+                    <button class="close-btn" id="close-device-list" aria-label="닫기">&times;</button>
+                </div>
+                <div class="modal-body device-list-modal-body">
+                    <div class="device-list-toolbar">
+                        <div class="device-list-search">
+                            <input type="text" id="device-list-search-input" placeholder="장비명 · IP · 부서 · 층 검색" autocomplete="off">
+                        </div>
+                        <div class="device-list-filters" id="device-list-status-filters" role="group" aria-label="상태 필터"></div>
+                    </div>
+                    <div class="device-list-meta">
+                        <span id="device-list-count">—</span>
+                        <span class="device-list-floor-tabs" id="device-list-floor-tabs" role="tablist" aria-label="층 필터"></span>
+                    </div>
+                    <div class="device-list-table-wrap">
+                        <table class="device-list-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-status">상태</th>
+                                    <th class="col-name">장비명</th>
+                                    <th class="col-type">유형</th>
+                                    <th class="col-vendor">벤더</th>
+                                    <th class="col-loc">층 / 부서</th>
+                                    <th class="col-ip">IP</th>
+                                    <th class="col-mac">MAC</th>
+                                    <th class="col-rt">응답</th>
+                                </tr>
+                            </thead>
+                            <tbody id="device-list-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#close-device-list')?.addEventListener('click', () => this.closeDeviceListModal());
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeDeviceListModal();
+        });
+        modal.querySelector('#device-list-search-input')?.addEventListener('input', (e) => {
+            this.deviceListFilter.query = e.target.value.trim().toLowerCase();
+            this.renderDeviceListTable();
+        });
+
+        return modal;
+    }
+
+    openDeviceListModal() {
+        this.deviceListFilter = this.deviceListFilter || { query: '', status: 'all', floor: 'all' };
+        const modal = this.ensureDeviceListModal();
+        this.renderDeviceListFilters();
+        this.renderDeviceListFloorTabs();
+        this.renderDeviceListTable();
+        modal.classList.add('active');
+        // 검색창 포커스
+        setTimeout(() => modal.querySelector('#device-list-search-input')?.focus(), 50);
+        document.addEventListener('keydown', this._deviceListEscHandler = (e) => {
+            if (e.key === 'Escape') this.closeDeviceListModal();
+        });
+    }
+
+    closeDeviceListModal() {
+        const modal = document.getElementById('device-list-modal');
+        modal?.classList.remove('active');
+        if (this._deviceListEscHandler) {
+            document.removeEventListener('keydown', this._deviceListEscHandler);
+            this._deviceListEscHandler = null;
+        }
+    }
+
+    renderDeviceListFilters() {
+        const root = document.getElementById('device-list-status-filters');
+        if (!root) return;
+        const counts = this.countByStatus();
+        const total = this.devices.length;
+        const filters = [
+            { key: 'all',      label: '전체',     value: total },
+            { key: 'online',   label: this.statusMeta.online?.label   || '온라인',     value: counts.online },
+            { key: 'checking', label: this.statusMeta.checking?.label || '확인 중',     value: counts.checking },
+            { key: 'delayed',  label: this.statusMeta.delayed?.label  || '응답 지연',   value: counts.delayed },
+            { key: 'offline',  label: this.statusMeta.offline?.label  || '응답 없음',   value: counts.offline },
+            { key: 'disabled', label: this.statusMeta.disabled?.label || '체크 제외',   value: counts.disabled }
+        ];
+        const active = this.deviceListFilter.status;
+        root.innerHTML = filters.map(f => `
+            <button type="button"
+                    class="device-list-filter-chip chip-${f.key}${active === f.key ? ' active' : ''}"
+                    data-status="${f.key}">
+                <span class="chip-label">${this.app.escapeHtml(f.label)}</span>
+                <span class="chip-count">${f.value}</span>
+            </button>
+        `).join('');
+        root.querySelectorAll('.device-list-filter-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deviceListFilter.status = btn.dataset.status;
+                this.renderDeviceListFilters();
+                this.renderDeviceListTable();
+            });
+        });
+    }
+
+    renderDeviceListFloorTabs() {
+        const root = document.getElementById('device-list-floor-tabs');
+        if (!root) return;
+        const floors = [
+            { key: 'all', label: '전체 층' },
+            { key: '2',   label: '2F' },
+            { key: '3',   label: '3F' },
+            { key: '4',   label: '4F' },
+            { key: '5',   label: '5F' },
+            { key: '6',   label: '6F' },
+            { key: 'unknown', label: '미식별' }
+        ];
+        const active = this.deviceListFilter.floor;
+        root.innerHTML = floors.map(f => `
+            <button type="button"
+                    class="device-list-floor-tab${active === f.key ? ' active' : ''}"
+                    data-floor="${f.key}"
+                    role="tab"
+                    aria-selected="${active === f.key}">
+                ${this.app.escapeHtml(f.label)}
+            </button>
+        `).join('');
+        root.querySelectorAll('.device-list-floor-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.deviceListFilter.floor = btn.dataset.floor;
+                this.renderDeviceListFloorTabs();
+                this.renderDeviceListTable();
+            });
+        });
+    }
+
+    getFilteredDevices() {
+        const { query, status, floor } = this.deviceListFilter;
+        return this.devices.filter(d => {
+            const dStatus = normalizeStatus(d.status);
+            if (status !== 'all' && dStatus !== status) return false;
+            if (floor !== 'all') {
+                if (floor === 'unknown') {
+                    if (d.floor != null) return false;
+                } else if (String(d.floor) !== floor) {
+                    return false;
+                }
+            }
+            if (query) {
+                const name = coerceLabel(d.name, '');
+                const dept = coerceLabel(d.dept, '');
+                const type = coerceLabel(d.type, '');
+                const vendor = coerceLabel(d.vendor, '');
+                const haystack = `${name} ${d.ip || ''} ${d.mac || ''} ${dept} ${type} ${vendor} ${d.floor != null ? d.floor + '층' : '미식별'}`.toLowerCase();
+                if (!haystack.includes(query)) return false;
+            }
+            return true;
+        });
+    }
+
+    renderDeviceListTable() {
+        const tbody = document.getElementById('device-list-tbody');
+        const countEl = document.getElementById('device-list-count');
+        if (!tbody) return;
+        const isAdmin = this.isAdmin();
+        const filtered = this.getFilteredDevices();
+        if (countEl) {
+            countEl.textContent = `총 ${filtered.length}대 / ${this.devices.length}대`;
+        }
+        if (!filtered.length) {
+            tbody.innerHTML = `<tr><td colspan="8" class="device-list-empty">조건에 맞는 장비가 없습니다.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = filtered.map(d => this.renderDeviceListRow(d, isAdmin)).join('');
+
+        // 관리자: 장비 목록 행 클릭 → 해당 장비 선택 + 평면도 패널 표시 (위치 지정용)
+        if (isAdmin) {
+            tbody.querySelectorAll('.device-list-row[data-device-id]').forEach(row => {
+                row.addEventListener('click', () => {
+                    this.selectDeviceById(row.dataset.deviceId);
+                    this.closeDeviceListModal();
+                });
+            });
+        }
+    }
+
+    renderDeviceListRow(device, isAdmin) {
+        const status = normalizeStatus(device.status);
+        const meta = this.getStatusMeta(status);
+        const typeStr = coerceLabel(device.type, 'PC').toString().toUpperCase();
+        const typeClass = typeStr.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const nameStr = coerceLabel(device.name, '이름 없음');
+        const deptStr = coerceLabel(device.dept, '미지정');
+        const isSensitive = typeStr === 'SERVER' || typeStr === 'NAS';
+        const showFullInfo = isAdmin || !isSensitive;
+        const name = showFullInfo ? this.app.escapeHtml(nameStr) : '비공개 장비';
+        const ip = isAdmin ? this.app.escapeHtml(device.ip || '') : '••• 숨김 •••';
+        const macRaw = device.mac ? this.app.escapeHtml(device.mac) : '—';
+        const mac = isAdmin ? macRaw : '••• 숨김 •••';
+        const ms = device.responseMs != null ? `${device.responseMs}ms` : '—';
+        const floorLabel = device.floor != null ? `${device.floor}F` : '—';
+        const dept = this.app.escapeHtml(deptStr);
+        const vendor = this.app.escapeHtml(coerceLabel(device.vendor, '—'));
+        const deviceId = this.app.escapeHtml(String(device.id ?? ''));
+        const posTag = isAdmin
+            ? (this.deviceHasPosition(device)
+                ? `<span class="device-list-pos-tag is-set">위치 지정됨</span>`
+                : `<span class="device-list-pos-tag is-unset">위치 미지정</span>`)
+            : '';
+
+        return `
+            <tr class="device-list-row status-${status}${isAdmin ? ' is-selectable' : ''}" data-device-id="${deviceId}">
+                <td class="col-status">
+                    <span class="status-dot status-${status}" style="--dot-color:${meta.color}"></span>
+                    <span class="device-list-status-label">${this.app.escapeHtml(meta.label)}</span>
+                </td>
+                <td class="col-name">${name}${posTag}</td>
+                <td class="col-type"><span class="device-list-type-pill type-${typeClass}">${this.app.escapeHtml(typeStr)}</span></td>
+                <td class="col-vendor">${vendor}</td>
+                <td class="col-loc">${this.app.escapeHtml(floorLabel)} / ${dept}</td>
+                <td class="col-ip"><code>${ip}</code></td>
+                <td class="col-mac"><code>${mac}</code></td>
+                <td class="col-rt">${ms}</td>
+            </tr>
+        `;
+    }
+}
 
 // 애플리케이션 인스턴스 생성 및 전역 변수로 설정
 let app;

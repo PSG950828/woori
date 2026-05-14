@@ -82,11 +82,74 @@
                             <span class="hero-divider"></span>
                             <span class="hero-note">Infrastructure Suite</span>
                         </div>
-                        
+
+                        <section class="status-monitor" id="status-monitor" aria-label="우리안과 인프라 실시간 관제">
+                            <header class="monitor-header">
+                                <div class="monitor-title-block">
+                                    <h2 class="monitor-title">우리안과 인프라 실시간 관제</h2>
+                                    <p class="monitor-subtitle">1층부터 7층까지 PC · 서버 · NAS · 검사장비의 네트워크 응답 상태를 한눈에 확인합니다.</p>
+                                </div>
+                                <div class="monitor-meta">
+                                    <div class="monitor-meta-row">
+                                        <span class="monitor-meta-label">마지막 갱신</span>
+                                        <span class="monitor-meta-value" id="monitor-last-updated">—</span>
+                                    </div>
+                                    <div class="monitor-meta-row">
+                                        <span class="monitor-meta-label">갱신 주기</span>
+                                        <span class="monitor-meta-value">30초</span>
+                                    </div>
+                                </div>
+                            </header>
+
+                            <div class="status-summary" id="status-summary" role="list" aria-label="장비 상태 요약"></div>
+
+                            <div class="floorplan-bar">
+                                <nav class="floor-selector" id="floor-selector" role="tablist" aria-label="층 선택"></nav>
+                            </div>
+
+                            <div class="floorplan-viewer" id="floorplan-viewer">
+                                <div class="floorplan-main">
+                                    <div class="floorplan-stage">
+                                        <div class="floorplan-frame" id="floorplan-frame">
+                                            <img class="floorplan-image" id="floorplan-image" alt="평면도" draggable="false">
+                                            <div class="floorplan-markers" id="floorplan-markers"></div>
+                                            <div class="floorplan-placeholder" id="floorplan-placeholder" hidden>
+                                                <p class="placeholder-title">평면도 이미지를 불러오지 못했습니다.</p>
+                                                <p class="placeholder-sub" id="floorplan-placeholder-sub">이미지 경로를 확인해주세요.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <aside class="floorplan-detail" id="floorplan-detail" aria-live="polite">
+                                        <p class="floorplan-detail-empty">평면도의 마커를 클릭하면 장비 정보가 표시됩니다.</p>
+                                    </aside>
+                                </div>
+                                <div class="floorplan-caption" id="floorplan-caption">—</div>
+                                <div class="zone-summary" id="zone-summary" role="list" aria-label="구역별 상태 요약"></div>
+                            </div>
+
+                            <div class="floorplan-actions">
+                                <button type="button" class="ghost-btn mini" id="open-device-list">전체 장비 표 보기</button>
+                                <button type="button" class="ghost-btn mini" id="monitor-refresh">수동 새로고침</button>
+                            </div>
+
+                            <div class="status-legend">
+                                <span class="legend-item"><span class="legend-dot status-online"></span>온라인</span>
+                                <span class="legend-item"><span class="legend-dot status-checking"></span>확인 중</span>
+                                <span class="legend-item"><span class="legend-dot status-delayed"></span>응답 지연</span>
+                                <span class="legend-item"><span class="legend-dot status-offline"></span>응답 없음</span>
+                                <span class="legend-item"><span class="legend-dot status-disabled"></span>체크 제외</span>
+                            </div>
+
+                            <p class="monitor-notice">
+                                표시된 상태는 전원 상태를 직접 의미하지 않습니다. 네트워크 응답 기준의 상태입니다.
+                                <strong>응답 없음</strong>은 PC 꺼짐, 절전모드, 랜선 분리, 방화벽 차단, IP 변경 등을 포함할 수 있습니다.
+                            </p>
+                        </section>
+
                         <div class="quick-links">
                             <div class="quick-links-head">
-                                <h3></h3>
-                                <p class="quick-links-hint"></p>
+                                <h3>빠른 이동</h3>
+                                <p class="quick-links-hint">자주 찾는 문서로 바로 이동하세요.</p>
                             </div>
                             <div class="link-grid" id="quick-links-grid"></div>
                         </div>

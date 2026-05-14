@@ -1,0 +1,166 @@
+	11 대역					
+	WOORI	172.11.1.2			6C:92:CF:15:45:80	
+	DESKTOP-BDJS3CP	172.11.1.3		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:95:1D:B2	
+	WOORI-old	172.11.1.4		Hewlett Packard Enterprise	94:40:C9:1F:5B:5A	
+	172-11-1-5.lightspeed.jcvlfl.sbcglobal.net	172.11.1.5		Synology Incorporated	90:09:D0:0C:38:7B	
+	WINDOWS-3GH7MRG	172.11.1.6		Hewlett Packard Enterprise	08:F1:EA:70:D2:C4	
+	172-11-1-10.lightspeed.jcvlfl.sbcglobal.net	172.11.1.10		QNAP Systems, Inc.	24:5E:BE:32:64:D6	
+	172-11-1-21.lightspeed.jcvlfl.sbcglobal.net	172.11.1.21		DASAN CO., LTD.	18:D0:71:63:87:7B	
+	172-11-1-22.lightspeed.jcvlfl.sbcglobal.net	172.11.1.22		DASAN CO., LTD.	00:D0:CB:F4:EF:BC	
+	172-11-1-31.lightspeed.jcvlfl.sbcglobal.net	172.11.1.31		DASAN CO., LTD.	18:D0:71:63:89:A3	
+	172-11-1-41.lightspeed.jcvlfl.sbcglobal.net	172.11.1.41		DASAN CO., LTD.	18:D0:71:63:89:9B	
+	172-11-1-42.lightspeed.jcvlfl.sbcglobal.net	172.11.1.42		DASAN CO., LTD.	00:D0:CB:F4:C7:AC	
+	172-11-1-51.lightspeed.jcvlfl.sbcglobal.net	172.11.1.51		DASAN CO., LTD.	18:D0:71:63:88:A3	
+	172-11-1-61.lightspeed.jcvlfl.sbcglobal.net	172.11.1.61		DASAN CO., LTD.	18:D0:71:63:89:45	
+	172-11-1-62.lightspeed.jcvlfl.sbcglobal.net	172.11.1.62		DASAN CO., LTD.	00:D0:CB:F4:EF:B3	
+	3층-상담실1	172.11.1.65		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:70	
+	3층-상담실2	172.11.1.66		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0C:C7	
+	172-11-1-67.lightspeed.jcvlfl.sbcglobal.net	172.11.1.67		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E3:86	
+	3층-상담실4	172.11.1.68		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:AE	
+	3층-상담실5	172.11.1.69		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:7E	
+	4층-상담실1	172.11.1.70		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E3:45	
+	4층-상담실2	172.11.1.71		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D5:A2:B1	
+	4층-상담실3	172.11.1.72		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C5:C4	
+	172-11-1-73.lightspeed.jcvlfl.sbcglobal.net	172.11.1.73		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C5:CA	
+	3층-a타워1	172.11.1.74		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C5:D1	
+	172-11-1-75.lightspeed.jcvlfl.sbcglobal.net	172.11.1.75		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:E3	
+	3층-a타워3	172.11.1.76		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0C:C2	
+	3층-a타워4	172.11.1.77		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:65	
+	3층-a타워5	172.11.1.78		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:6F	
+	172-11-1-79.lightspeed.jcvlfl.sbcglobal.net	172.11.1.79		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:DF:D7	
+	172-11-1-80.lightspeed.jcvlfl.sbcglobal.net	172.11.1.80		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:ED:93	
+	4층-a타워2	172.11.1.81		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E4:E7	
+	3F-room1	172.11.1.82			10:FF:E0:86:E6:56	
+	3F-room2	172.11.1.83		ASRock Incorporation	A8:A1:59:FF:19:EC	
+	3F-room3	172.11.1.84			10:FF:E0:86:E6:40	
+	3F-room4	172.11.1.85			74:56:3C:47:43:FA	
+	3F-room5	172.11.1.86			10:FF:E0:86:E6:49	
+	4F-room1	172.11.1.87		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C5:CB	
+	4F-room2	172.11.1.88		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E4:80	
+	4F-room3	172.11.1.89		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:D9:C2:F1	
+	4층-레이저실	172.11.1.90		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C5:4D	
+	5층-회복실1	172.11.1.91		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EA:2D:82	
+	5층-회복실2	172.11.1.92		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:BF:CE	
+	5층-마취과	172.11.1.93		GIGA-BYTE TECHNOLOGY CO.,LTD.	90:2B:34:D3:BC:B0	
+	5층-준비실1	172.11.1.94		GIGA-BYTE TECHNOLOGY CO.,LTD.	D8:5E:D3:DD:3E:30	
+	5층-준비실2	172.11.1.95		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:CF:E8	
+	5층-수술1번방	172.11.1.96		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:CF:F4	
+	172-11-1-97.lightspeed.jcvlfl.sbcglobal.net	172.11.1.97		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:CF:F0	
+	2층-a타워1	172.11.1.101		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:EC:95	
+	2층-spc1	172.11.1.102		REALTEK SEMICONDUCTOR CORP.	00:E0:4C:68:01:0C	
+	2층-k5m	172.11.1.103		Samsung Electronics Co.,Ltd	98:83:89:87:DA:96	
+	2층-myopia	172.11.1.104		Samsung Electronics.,LTD	8C:B0:E9:EC:6A:A0	
+	2층-optos	172.11.1.105			CC:96:E5:44:24:D4	
+	172-11-1-106.lightspeed.jcvlfl.sbcglobal.net	172.11.1.106		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C3:AB	
+	2층-mr2	172.11.1.107		ASUSTek COMPUTER INC.	3C:7C:3F:B9:AC:F6	
+	172-11-1-108.lightspeed.jcvlfl.sbcglobal.net	172.11.1.108		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E3:5C	
+	2층-a타워2	172.11.1.111		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:D6	
+	2AT2	172.11.1.112		ASUSTek COMPUTER INC.	3C:7C:3F:B9:AC:50	
+	2층-spc2	172.11.1.113		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:B3	
+	2층-망막topo	172.11.1.114		Samsung Electronics.,LTD	8C:B0:E9:92:7F:B9	
+	2층-시야검사실	172.11.1.115		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:ED:E1	
+	2층-vep	172.11.1.116		HP Inc.	BC:E9:2F:A4:31:58	
+	2층-oct1	172.11.1.117		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:D0:EE:12	
+	172-11-1-118.lightspeed.jcvlfl.sbcglobal.net	172.11.1.118		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E3:81	
+	172-11-1-119.lightspeed.jcvlfl.sbcglobal.net	172.11.1.119		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:78	
+	2층-a타워4	172.11.1.120		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E3:62	
+	2층-hra1	172.11.1.121			BC:0F:F3:BF:A9:B6	
+	2층-hra2	172.11.1.122			BC:0F:F3:BF:A4:01	
+	172-11-1-123.lightspeed.jcvlfl.sbcglobal.net	172.11.1.123		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:D7	
+	172-11-1-124.lightspeed.jcvlfl.sbcglobal.net	172.11.1.124		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:CD:56	
+	IOLMaster700	172.11.1.125		INSIDE Technology A/S	00:E0:F4:35:E5:17	
+	172-11-1-126.lightspeed.jcvlfl.sbcglobal.net	172.11.1.126		Advantech Technology (CHINA) Co., Ltd.	C4:00:AD:49:1F:49	
+	172-11-1-127.lightspeed.jcvlfl.sbcglobal.net	172.11.1.127		Advantech Technology (CHINA) Co., Ltd.	C4:00:AD:9C:A3:48	
+	172-11-1-128.lightspeed.jcvlfl.sbcglobal.net	172.11.1.128		Advantech Technology (CHINA) Co., Ltd.	C4:00:AD:80:31:FC	
+	cirrus6000-2	172.11.1.129		Advantech Technology (CHINA) Co., Ltd.	C4:00:AD:7E:C0:A0	
+	2층 - ABscan 	172.11.1.130		TIVA MICROCOMPUTER CORP. (TMC)	00:50:08:0F:05:FA	
+	Visucam-NM3	172.11.1.137		Fujitsu Technology Solutions GmbH	90:1B:0E:FC:01:90	
+	cirrus6000-4th	172.11.1.138		Advantech Technology (CHINA) Co., Ltd.	C4:00:AD:7E:C0:B4	
+	4층-abscan	172.11.1.139		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:BF:D6	
+	Visucam-NM3	172.11.1.140		Fujitsu Technology Solutions GmbH	90:1B:0E:ED:8A:E9	
+	172-11-1-144.lightspeed.jcvlfl.sbcglobal.net	172.11.1.144		AAEON Technology Inc.	00:07:32:72:1B:E7	
+	172-11-1-147.lightspeed.jcvlfl.sbcglobal.net	172.11.1.147		AAEON Technology Inc.	00:07:32:65:BA:21	
+	cirrus6000-1-3f	172.11.1.148		Advantech Technology (CHINA) Co., Ltd.	C4:00:AD:6B:65:EA	
+	2층-oct3	172.11.1.149		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:D5	
+	172-11-1-150.lightspeed.jcvlfl.sbcglobal.net	172.11.1.150		EFM Networks	70:5D:CC:33:65:7C	
+	172-11-1-152.lightspeed.jcvlfl.sbcglobal.net	172.11.1.152		EFM Networks	70:5D:CC:33:7E:98	
+	172-11-1-153.lightspeed.jcvlfl.sbcglobal.net	172.11.1.153		EFM Networks	70:5D:CC:33:79:98	
+	172-11-1-154.lightspeed.jcvlfl.sbcglobal.net	172.11.1.154		EFM Networks	70:5D:CC:33:8C:08	
+	172-11-1-155.lightspeed.jcvlfl.sbcglobal.net	172.11.1.155		EFM Networks	70:5D:CC:33:78:3C	
+	172-11-1-156.lightspeed.jcvlfl.sbcglobal.net	172.11.1.156		EFM Networks	70:5D:CC:D7:84:18	
+	172-11-1-157.lightspeed.jcvlfl.sbcglobal.net	172.11.1.157		EFM Networks	70:5D:CC:33:82:54	
+	2층-접수1	172.11.1.165		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:3D	
+	2층-접수2	172.11.1.166		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:D1:63	
+	2층-접수3	172.11.1.167		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:71	
+	2층-접수4	172.11.1.168		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:BF:D5	
+	3층-접수1	172.11.1.169		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:CF:F5	
+	3층-접수2	172.11.1.170		GIGA-BYTE TECHNOLOGY CO.,LTD.	18:C0:4D:99:E4:BA	
+	3층-접수3	172.11.1.171		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:BF:A2	
+	4층-접수1	172.11.1.172		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C6:B8	
+	4층-접수2	172.11.1.173		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:EB:0B:64	
+	4층-접수3	172.11.1.174		GIGA-BYTE TECHNOLOGY CO.,LTD.	B4:2E:99:D6:C5:CD	
+	172-11-1-201.lightspeed.jcvlfl.sbcglobal.net	172.11.1.201		APC by Schneider Electric	28:29:86:53:EC:16	
+	172-11-1-202.lightspeed.jcvlfl.sbcglobal.net	172.11.1.202		APC by Schneider Electric	28:29:86:53:E7:60	
+	172-11-1-211.lightspeed.jcvlfl.sbcglobal.net	172.11.1.211			5A:5A:00:42:77:E8	
+	172-11-1-241.lightspeed.jcvlfl.sbcglobal.net	172.11.1.241		VOLANS	F8:93:F3:09:35:68	
+	172-11-1-254.lightspeed.jcvlfl.sbcglobal.net	172.11.1.254		DASAN Network Solutions	9C:65:EE:BD:E4:D5	
+						
+못 찾음	172-11-1-20.lightspeed.jcvlfl.sbcglobal.net	172.11.1.20		LG ELECTRONICS	D8:4F:B8:00:68:2B	
+	172-11-1-32.lightspeed.jcvlfl.sbcglobal.net	172.11.1.32		DASAN CO., LTD.	00:D0:CB:F4:EF:BD	
+	172-11-1-133.lightspeed.jcvlfl.sbcglobal.net	172.11.1.133		SHENZHEN JEHE TECHNOLOGY DEVELOPMENT CO., LTD.	24:1C:04:77:7C:38	
+	172-11-1-142.lightspeed.jcvlfl.sbcglobal.net	172.11.1.142		F & S Elektronik Systeme GmbH	00:05:51:14:37:E1	
+	172-11-1-151.lightspeed.jcvlfl.sbcglobal.net	172.11.1.151			80:E4:DA:85:10:8B	
+	172-11-1-161.lightspeed.jcvlfl.sbcglobal.net	172.11.1.161			80:E4:DA:85:0F:B1	
+
+
+
+
+
+우리안과 IP 12대역 현황							
+172-12-2-6.lightspeed.sgnwmi.sbcglobal.net		172.12.2.6			90:E2:FC:B0:63:DF		
+3층-본부장실		172.12.2.7	GIGA-BYTE TECHNOLOGY CO.,LTD.		D8:5E:D3:97:86:05		
+172-12-2-10.lightspeed.sgnwmi.sbcglobal.net		172.12.2.10	PAX Computer Technology(Shenzhen) Ltd.		54:81:2D:77:11:F9		
+172-12-2-11.lightspeed.sgnwmi.sbcglobal.net		172.12.2.11	Hangzhou Hikvision Digital Technology Co.,Ltd.		98:DF:82:C4:D7:C1		
+172-12-2-12.lightspeed.sgnwmi.sbcglobal.net		172.12.2.12	Hangzhou Hikvision Digital Technology Co.,Ltd.		F8:4D:FC:E5:EB:84		
+172-12-2-13.lightspeed.sgnwmi.sbcglobal.net		172.12.2.13	Hangzhou Hikvision Digital Technology Co.,Ltd.		F8:4D:FC:E5:EB:7C		
+172-12-2-14.lightspeed.sgnwmi.sbcglobal.net		172.12.2.14	Hangzhou Hikvision Digital Technology Co.,Ltd.		F8:4D:FC:E5:EB:80		
+172-12-2-15.lightspeed.sgnwmi.sbcglobal.net		172.12.2.15			00:81:61:02:14:54		
+172-12-2-16.lightspeed.sgnwmi.sbcglobal.net		172.12.2.16	PAX Computer Technology(Shenzhen) Ltd.		54:81:2D:4C:8D:60		
+172-12-2-17.lightspeed.sgnwmi.sbcglobal.net		172.12.2.17	RIFATRON		00:0C:28:0C:87:42		
+BRWF0A654FBD102		172.12.2.18	CLOUD NETWORK TECHNOLOGY SINGAPORE PTE. LTD.		F0:A6:54:FB:D1:02		
+172-12-2-20.lightspeed.sgnwmi.sbcglobal.net		172.12.2.20	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:73:58		
+172-12-2-21.lightspeed.sgnwmi.sbcglobal.net		172.12.2.21	EFM Networks		58:86:94:F2:4E:D5		
+172-12-2-22.lightspeed.sgnwmi.sbcglobal.net		172.12.2.22	Samsung Electronics Co.,Ltd		F8:F1:E6:11:C9:63		
+172-12-2-23.lightspeed.sgnwmi.sbcglobal.net		172.12.2.23	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:70:4F		
+172-12-2-24.lightspeed.sgnwmi.sbcglobal.net		172.12.2.24	LG Electronics		B0:37:95:CF:32:9E		
+172-12-2-25.lightspeed.sgnwmi.sbcglobal.net		172.12.2.25	Raspberry Pi Foundation		B8:27:EB:6D:7E:53		
+172-12-2-26.lightspeed.sgnwmi.sbcglobal.net		172.12.2.26	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:73:65		
+172-12-2-27.lightspeed.sgnwmi.sbcglobal.net		172.12.2.27	LG Electronics		64:95:6C:CC:5A:C7		
+BRWA83B7605AC32		172.12.2.28			A8:3B:76:05:AC:32		
+172-12-2-29.lightspeed.sgnwmi.sbcglobal.net		172.12.2.29	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:83:09:35		
+BRWFCB0DEE74412		172.12.2.30			FC:B0:DE:E7:44:12		
+172-12-2-31.lightspeed.sgnwmi.sbcglobal.net		172.12.2.31	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:70:1E		
+172-12-2-32.lightspeed.sgnwmi.sbcglobal.net		172.12.2.32	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:70:A4		
+172-12-2-33.lightspeed.sgnwmi.sbcglobal.net		172.12.2.33			80:E4:DA:85:0F:AB		
+172-12-2-37.lightspeed.sgnwmi.sbcglobal.net		172.12.2.37			80:E4:DA:85:0F:B1		
+172-12-2-38.lightspeed.sgnwmi.sbcglobal.net		172.12.2.38			5A:FA:B9:44:AA:8E		
+172-12-2-39.lightspeed.sgnwmi.sbcglobal.net		172.12.2.39			1A:1E:60:32:55:84		
+172.12.2.40 main pos (172-12-2-40.lightspeed.sgnwmi.sbcglobal.net)		172.12.2.40	SHENZHEN JEHE TECHNOLOGY DEVELOPMENT CO., LTD.		24:1C:04:77:7C:6E		
+172-12-2-41.lightspeed.sgnwmi.sbcglobal.net		172.12.2.41	SHENZHEN JEHE TECHNOLOGY DEVELOPMENT CO., LTD.		24:1C:04:77:7C:38		
+172-12-2-42.lightspeed.sgnwmi.sbcglobal.net		172.12.2.42			80:E4:DA:86:98:29		
+172-12-2-43.lightspeed.sgnwmi.sbcglobal.net		172.12.2.43			80:E4:DA:86:98:23		
+172-12-2-47.lightspeed.sgnwmi.sbcglobal.net		172.12.2.47			A0:44:B7:6D:F9:70		
+172-12-2-48.lightspeed.sgnwmi.sbcglobal.net		172.12.2.48	LG Electronics		64:95:6C:CC:5A:E8		
+172-12-2-49.lightspeed.sgnwmi.sbcglobal.net		172.12.2.49			A0:44:B7:2F:8D:FA		
+172-12-2-50.lightspeed.sgnwmi.sbcglobal.net		172.12.2.50	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:71:A0		
+172-12-2-51.lightspeed.sgnwmi.sbcglobal.net		172.12.2.51	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:72:7C		
+172-12-2-52.lightspeed.sgnwmi.sbcglobal.net		172.12.2.52	LG Electronics		64:95:6C:D0:01:37		
+DESKTOP-MBBAMKB		172.12.2.53	GIGA-BYTE TECHNOLOGY CO.,LTD.		50:E5:49:3B:E6:DF		
+172-12-2-54.lightspeed.sgnwmi.sbcglobal.net		172.12.2.54	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:70:E0		
+172-12-2-55.lightspeed.sgnwmi.sbcglobal.net		172.12.2.55	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:70:33		
+		172.12.2.56	LG Electronics		64:95:6C:CC:5A:E3		
+172-12-2-57.lightspeed.sgnwmi.sbcglobal.net		172.12.2.57	Zhuhai Raysharp Technology Co.,Ltd		00:23:63:7F:70:2C		
+		172.12.2.58	LG Electronics		64:95:6C:BD:24:42		
+172-12-2-60.lightspeed.sgnwmi.sbcglobal.net		172.12.2.60	LG Electronics		64:95:6C:F3:9E:24		
+172-12-2-61.lightspeed.sgnwmi.sbcglobal.net		172.12.2.61	LG Electronics		64:95:6C:CC:5A:CF		
+172-12-2-62.lightspeed.sgnwmi.sbcglobal.net		172.12.2.62	LG Electronics		64:95:6C:CC:5A:E1		

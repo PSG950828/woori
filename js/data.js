@@ -8,6 +8,286 @@ const DEFAULT_QUICK_LINKS = [
 
 const DEFAULT_UPDATED_AT = '2024-12-01T09:00:00.000Z';
 
+// 인프라 상태 맵 - 실제 IP/MAC 목록 기반 장비 데이터
+// status: 'online' | 'checking' | 'delayed' | 'offline' | 'disabled'
+// type:   'PC' | 'SERVER' | 'NAS' | 'DEVICE' | 'PRINTER' | 'POS' | 'CCTV' | 'NETWORK' | 'UPS' | 'UNKNOWN'
+// floor:  2~6 (식별) | null (층 미식별)
+// 분류 근거(vendor): IP/ipmac.txt 의 MAC 벤더 정보로 유추
+//   Synology/QNAP→NAS, DASAN/EFM/VOLANS→NETWORK, APC→UPS,
+//   Hikvision/Raysharp→CCTV, PAX/SHENZHEN JEHE→POS, Brother(BRW)→PRINTER,
+//   Advantech/AAEON/RIFATRON→DEVICE, GIGA-BYTE/HP/ASUSTek/ASRock→PC, Raspberry Pi→DEVICE(임베디드)
+const SAMPLE_INFRA_DEVICES = [
+    // ===== 172.11.1.x - 6층 서버실 (NAS 포함) =====
+    { id: 'd11-2',   name: 'WOORI',           ip: '172.11.1.2',  mac: '6C:92:CF:15:45:80', type: 'SERVER', floor: '6F', zone: '서버실', status: 'online', responseMs: 1, vendor: '메인 서버', x: 30, y: 30 },
+    { id: 'd11-3',   name: 'DESKTOP-BDJS3CP', ip: '172.11.1.3',  mac: '18:C0:4D:95:1D:B2', type: 'PC',     floor: '6F', zone: '서버실', status: 'delayed', responseMs: 380, vendor: 'GIGA-BYTE', x: 44, y: 30 },
+    { id: 'd11-4',   name: 'WOORI-old',       ip: '172.11.1.4',  mac: '94:40:C9:1F:5B:5A', type: 'SERVER', floor: '6F', zone: '서버실', status: 'online', responseMs: 1, vendor: 'HP Enterprise', x: 30, y: 44 },
+    { id: 'd11-5',   name: 'Synology NAS',    ip: '172.11.1.5',  mac: '90:09:D0:0C:38:7B', type: 'NAS',    floor: '6F', zone: '서버실', status: 'online', responseMs: 2, vendor: 'Synology', x: 44, y: 44 },
+    { id: 'd11-6',   name: 'WINDOWS-3GH7MRG', ip: '172.11.1.6',  mac: '08:F1:EA:70:D2:C4', type: 'SERVER', floor: '6F', zone: '서버실', status: 'online', responseMs: 1, vendor: 'HP Enterprise', x: 30, y: 58 },
+    { id: 'd11-10',  name: 'QNAP NAS',        ip: '172.11.1.10', mac: '24:5E:BE:32:64:D6', type: 'NAS',    floor: '6F', zone: '서버실', status: 'online', responseMs: 2, vendor: 'QNAP', x: 44, y: 58 },
+    // ----- 네트워크 인프라 (DASAN 스위치 / EFM 무선AP / VOLANS / 게이트웨이) -----
+    { id: 'd11-21',  name: 'DASAN-SW-21',     ip: '172.11.1.21',  mac: '18:D0:71:63:87:7B', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-22',  name: 'DASAN-SW-22',     ip: '172.11.1.22',  mac: '00:D0:CB:F4:EF:BC', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-31',  name: 'DASAN-SW-31',     ip: '172.11.1.31',  mac: '18:D0:71:63:89:A3', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-41',  name: 'DASAN-SW-41',     ip: '172.11.1.41',  mac: '18:D0:71:63:89:9B', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-42',  name: 'DASAN-SW-42',     ip: '172.11.1.42',  mac: '00:D0:CB:F4:C7:AC', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-51',  name: 'DASAN-SW-51',     ip: '172.11.1.51',  mac: '18:D0:71:63:88:A3', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-61',  name: 'DASAN-SW-61',     ip: '172.11.1.61',  mac: '18:D0:71:63:89:45', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-62',  name: 'DASAN-SW-62',     ip: '172.11.1.62',  mac: '00:D0:CB:F4:EF:B3', type: 'NETWORK', floor: null, zone: '네트워크 스위치', status: 'online', responseMs: 3, vendor: 'DASAN' },
+    { id: 'd11-150', name: 'EFM-AP-150',      ip: '172.11.1.150', mac: '70:5D:CC:33:65:7C', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-152', name: 'EFM-AP-152',      ip: '172.11.1.152', mac: '70:5D:CC:33:7E:98', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-153', name: 'EFM-AP-153',      ip: '172.11.1.153', mac: '70:5D:CC:33:79:98', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-154', name: 'EFM-AP-154',      ip: '172.11.1.154', mac: '70:5D:CC:33:8C:08', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-155', name: 'EFM-AP-155',      ip: '172.11.1.155', mac: '70:5D:CC:33:78:3C', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-156', name: 'EFM-AP-156',      ip: '172.11.1.156', mac: '70:5D:CC:D7:84:18', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-157', name: 'EFM-AP-157',      ip: '172.11.1.157', mac: '70:5D:CC:33:82:54', type: 'NETWORK', floor: null, zone: '무선 AP', status: 'online', responseMs: 4, vendor: 'EFM Networks' },
+    { id: 'd11-241', name: 'VOLANS-NET-241',  ip: '172.11.1.241', mac: 'F8:93:F3:09:35:68', type: 'NETWORK', floor: null, zone: '네트워크 장비', status: 'online', responseMs: 5, vendor: 'VOLANS' },
+    { id: 'd11-254', name: '게이트웨이',       ip: '172.11.1.254', mac: '9C:65:EE:BD:E4:D5', type: 'NETWORK', floor: null, zone: '게이트웨이', status: 'online', responseMs: 1, vendor: 'DASAN Network Solutions' },
+
+    // ----- UPS (APC) -----
+    { id: 'd11-201', name: 'APC-UPS-201',     ip: '172.11.1.201', mac: '28:29:86:53:EC:16', type: 'UPS', floor: null, zone: 'UPS', status: 'online', responseMs: 6, vendor: 'APC by Schneider' },
+    { id: 'd11-202', name: 'APC-UPS-202',     ip: '172.11.1.202', mac: '28:29:86:53:E7:60', type: 'UPS', floor: null, zone: 'UPS', status: 'online', responseMs: 6, vendor: 'APC by Schneider' },
+
+    // ----- 검사장비/임베디드 (Advantech · AAEON) -----
+    { id: 'd11-126', name: 'Advantech-126',   ip: '172.11.1.126', mac: 'C4:00:AD:49:1F:49', type: 'DEVICE', floor: null, zone: '검사장비 (Advantech)', status: 'online', responseMs: 7, vendor: 'Advantech' },
+    { id: 'd11-127', name: 'Advantech-127',   ip: '172.11.1.127', mac: 'C4:00:AD:9C:A3:48', type: 'DEVICE', floor: null, zone: '검사장비 (Advantech)', status: 'online', responseMs: 7, vendor: 'Advantech' },
+    { id: 'd11-128', name: 'Advantech-128',   ip: '172.11.1.128', mac: 'C4:00:AD:80:31:FC', type: 'DEVICE', floor: null, zone: '검사장비 (Advantech)', status: 'online', responseMs: 7, vendor: 'Advantech' },
+    { id: 'd11-144', name: 'AAEON-144',       ip: '172.11.1.144', mac: '00:07:32:72:1B:E7', type: 'DEVICE', floor: null, zone: '검사장비 (AAEON)', status: 'online', responseMs: 8, vendor: 'AAEON' },
+    { id: 'd11-147', name: 'AAEON-147',       ip: '172.11.1.147', mac: '00:07:32:65:BA:21', type: 'DEVICE', floor: null, zone: '검사장비 (AAEON)', status: 'online', responseMs: 8, vendor: 'AAEON' },
+
+    // ----- GIGA-BYTE 미할당 PC (벤더로 PC 식별, 위치 매핑 필요) -----
+    { id: 'd11-67',  name: 'PC-67',  ip: '172.11.1.67',  mac: '18:C0:4D:99:E3:86', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-73',  name: 'PC-73',  ip: '172.11.1.73',  mac: 'B4:2E:99:D6:C5:CA', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-75',  name: 'PC-75',  ip: '172.11.1.75',  mac: 'B4:2E:99:EB:0B:E3', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-79',  name: 'PC-79',  ip: '172.11.1.79',  mac: '18:C0:4D:99:DF:D7', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-80',  name: 'PC-80',  ip: '172.11.1.80',  mac: '18:C0:4D:99:ED:93', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-97',  name: 'PC-97',  ip: '172.11.1.97',  mac: 'B4:2E:99:D6:CF:F0', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-106', name: 'PC-106', ip: '172.11.1.106', mac: 'B4:2E:99:D6:C3:AB', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-108', name: 'PC-108', ip: '172.11.1.108', mac: '18:C0:4D:99:E3:5C', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-118', name: 'PC-118', ip: '172.11.1.118', mac: '18:C0:4D:99:E3:81', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-119', name: 'PC-119', ip: '172.11.1.119', mac: 'B4:2E:99:EB:0B:78', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-123', name: 'PC-123', ip: '172.11.1.123', mac: 'B4:2E:99:EB:0B:D7', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-124', name: 'PC-124', ip: '172.11.1.124', mac: 'B4:2E:99:D6:CD:56', type: 'PC', floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+
+    // ----- 미식별 (벤더 미상 · 랜덤 MAC 추정) -----
+    { id: 'd11-211', name: '172.11.1.211', ip: '172.11.1.211', mac: '5A:5A:00:42:77:E8', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+
+    // ===== 172.11.1.x - 3층 (상담실 · a타워 · 진료룸 · 접수 · 검사장비) =====
+    { id: 'd11-65',  name: '3층-상담실1',     ip: '172.11.1.65', mac: 'B4:2E:99:D6:C6:70', type: 'PC', floor: '3F', zone: '상담실', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-66',  name: '3층-상담실2',     ip: '172.11.1.66', mac: 'B4:2E:99:EB:0C:C7', type: 'PC', floor: '3F', zone: '상담실', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-68',  name: '3층-상담실4',     ip: '172.11.1.68', mac: 'B4:2E:99:D6:C6:AE', type: 'PC', floor: '3F', zone: '상담실', status: 'online', responseMs: 5, vendor: 'GIGA-BYTE' },
+    { id: 'd11-69',  name: '3층-상담실5',     ip: '172.11.1.69', mac: 'B4:2E:99:D6:C6:7E', type: 'PC', floor: '3F', zone: '상담실', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-74',  name: '3층-a타워1',      ip: '172.11.1.74', mac: 'B4:2E:99:D6:C5:D1', type: 'PC', floor: '3F', zone: 'a타워', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-76',  name: '3층-a타워3',      ip: '172.11.1.76', mac: 'B4:2E:99:EB:0C:C2', type: 'PC', floor: '3F', zone: 'a타워', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-77',  name: '3층-a타워4',      ip: '172.11.1.77', mac: 'B4:2E:99:EB:0B:65', type: 'PC', floor: '3F', zone: 'a타워', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-78',  name: '3층-a타워5',      ip: '172.11.1.78', mac: 'B4:2E:99:EB:0B:6F', type: 'PC', floor: '3F', zone: 'a타워', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-82',  name: '3F-room1',         ip: '172.11.1.82', mac: '10:FF:E0:86:E6:56', type: 'PC', floor: '3F', zone: '진료룸', status: 'online', responseMs: 3, vendor: '' },
+    { id: 'd11-83',  name: '3F-room2',         ip: '172.11.1.83', mac: 'A8:A1:59:FF:19:EC', type: 'PC', floor: '3F', zone: '진료룸', status: 'online', responseMs: 4, vendor: 'ASRock' },
+    { id: 'd11-84',  name: '3F-room3',         ip: '172.11.1.84', mac: '10:FF:E0:86:E6:40', type: 'PC', floor: '3F', zone: '진료룸', status: 'online', responseMs: 3, vendor: '' },
+    { id: 'd11-85',  name: '3F-room4',         ip: '172.11.1.85', mac: '74:56:3C:47:43:FA', type: 'PC', floor: '3F', zone: '진료룸', status: 'online', responseMs: 4, vendor: '' },
+    { id: 'd11-86',  name: '3F-room5',         ip: '172.11.1.86', mac: '10:FF:E0:86:E6:49', type: 'PC', floor: '3F', zone: '진료룸', status: 'online', responseMs: 3, vendor: '' },
+    { id: 'd11-148', name: 'cirrus6000-1-3f',  ip: '172.11.1.148', mac: 'C4:00:AD:6B:65:EA', type: 'DEVICE', floor: '3F', zone: '검사장비', status: 'online', responseMs: 8, vendor: 'Advantech' },
+    { id: 'd11-169', name: '3층-접수1',        ip: '172.11.1.169', mac: 'B4:2E:99:D6:CF:F5', type: 'PC', floor: '3F', zone: '접수', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE' },
+    { id: 'd11-170', name: '3층-접수2',        ip: '172.11.1.170', mac: '18:C0:4D:99:E4:BA', type: 'PC', floor: '3F', zone: '접수', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-171', name: '3층-접수3',        ip: '172.11.1.171', mac: 'B4:2E:99:D6:BF:A2', type: 'PC', floor: '3F', zone: '접수', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE' },
+
+    // ===== 172.11.1.x - 4층 (상담실 · a타워 · 진료룸 · 레이저실 · 접수 · 검사장비) =====
+    { id: 'd11-70',  name: '4층-상담실1',     ip: '172.11.1.70', mac: '18:C0:4D:99:E3:45', type: 'PC', floor: '4F', zone: '상담실', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-71',  name: '4층-상담실2',     ip: '172.11.1.71', mac: 'B4:2E:99:D5:A2:B1', type: 'PC', floor: '4F', zone: '상담실', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-72',  name: '4층-상담실3',     ip: '172.11.1.72', mac: 'B4:2E:99:D6:C5:C4', type: 'PC', floor: '4F', zone: '상담실', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-81',  name: '4층-a타워2',      ip: '172.11.1.81', mac: '18:C0:4D:99:E4:E7', type: 'PC', floor: '4F', zone: 'a타워', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-87',  name: '4F-room1',         ip: '172.11.1.87', mac: 'B4:2E:99:D6:C5:CB', type: 'PC', floor: '4F', zone: '진료룸', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-88',  name: '4F-room2',         ip: '172.11.1.88', mac: '18:C0:4D:99:E4:80', type: 'PC', floor: '4F', zone: '진료룸', status: 'offline', responseMs: null, vendor: 'GIGA-BYTE' },
+    { id: 'd11-89',  name: '4F-room3',         ip: '172.11.1.89', mac: '18:C0:4D:D9:C2:F1', type: 'PC', floor: '4F', zone: '진료룸', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-90',  name: '4층-레이저실',     ip: '172.11.1.90', mac: 'B4:2E:99:D6:C5:4D', type: 'PC', floor: '4F', zone: '레이저실', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-138', name: 'cirrus6000-4th',   ip: '172.11.1.138', mac: 'C4:00:AD:7E:C0:B4', type: 'DEVICE', floor: '4F', zone: '검사장비', status: 'online', responseMs: 6, vendor: 'Advantech' },
+    { id: 'd11-139', name: '4층-abscan',       ip: '172.11.1.139', mac: 'B4:2E:99:D6:BF:D6', type: 'DEVICE', floor: '4F', zone: '검사장비', status: 'online', responseMs: 9, vendor: 'GIGA-BYTE' },
+    { id: 'd11-140', name: 'Visucam-NM3 (4F)', ip: '172.11.1.140', mac: '90:1B:0E:ED:8A:E9', type: 'DEVICE', floor: '4F', zone: '검사장비', status: 'online', responseMs: 7, vendor: 'Fujitsu' },
+    { id: 'd11-172', name: '4층-접수1',        ip: '172.11.1.172', mac: 'B4:2E:99:D6:C6:B8', type: 'PC', floor: '4F', zone: '접수', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE' },
+    { id: 'd11-173', name: '4층-접수2',        ip: '172.11.1.173', mac: 'B4:2E:99:EB:0B:64', type: 'PC', floor: '4F', zone: '접수', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-174', name: '4층-접수3',        ip: '172.11.1.174', mac: 'B4:2E:99:D6:C5:CD', type: 'PC', floor: '4F', zone: '접수', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE' },
+
+    // ===== 172.11.1.x - 5층 (수술실 · 회복실 · 마취과 · 준비실) =====
+    { id: 'd11-91',  name: '5층-회복실1',     ip: '172.11.1.91', mac: 'B4:2E:99:EA:2D:82', type: 'PC', floor: '5F', zone: '회복실', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-92',  name: '5층-회복실2',     ip: '172.11.1.92', mac: 'B4:2E:99:D6:BF:CE', type: 'PC', floor: '5F', zone: '회복실', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-93',  name: '5층-마취과',       ip: '172.11.1.93', mac: '90:2B:34:D3:BC:B0', type: 'PC', floor: '5F', zone: '마취과', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-94',  name: '5층-준비실1',     ip: '172.11.1.94', mac: 'D8:5E:D3:DD:3E:30', type: 'PC', floor: '5F', zone: '준비실', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-95',  name: '5층-준비실2',     ip: '172.11.1.95', mac: 'B4:2E:99:D6:CF:E8', type: 'PC', floor: '5F', zone: '준비실', status: 'delayed', responseMs: 412, vendor: 'GIGA-BYTE' },
+    { id: 'd11-96',  name: '5층-수술1번방',   ip: '172.11.1.96', mac: 'B4:2E:99:D6:CF:F4', type: 'PC', floor: '5F', zone: '수술실', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE' },
+
+    // ===== 172.11.1.x - 2층 (접수 · a타워 · 검사장비 · 시야검사) =====
+    { id: 'd11-101', name: '2층-a타워1',      ip: '172.11.1.101', mac: '18:C0:4D:99:EC:95', type: 'PC', floor: '2F', zone: 'a타워', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE', x: 22, y: 26 },
+    { id: 'd11-102', name: '2층-spc1',         ip: '172.11.1.102', mac: '00:E0:4C:68:01:0C', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 6, vendor: 'Realtek', x: 38, y: 32 },
+    { id: 'd11-103', name: '2층-k5m',          ip: '172.11.1.103', mac: '98:83:89:87:DA:96', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 5, vendor: 'Samsung' },
+    { id: 'd11-104', name: '2층-myopia',       ip: '172.11.1.104', mac: '8C:B0:E9:EC:6A:A0', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 7, vendor: 'Samsung', x: 54, y: 30 },
+    { id: 'd11-105', name: '2층-optos',        ip: '172.11.1.105', mac: 'CC:96:E5:44:24:D4', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 8, vendor: '', x: 70, y: 34 },
+    { id: 'd11-107', name: '2층-mr2',          ip: '172.11.1.107', mac: '3C:7C:3F:B9:AC:F6', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 6, vendor: 'ASUSTek' },
+    { id: 'd11-111', name: '2층-a타워2',      ip: '172.11.1.111', mac: 'B4:2E:99:D6:C6:D6', type: 'PC', floor: '2F', zone: 'a타워', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd11-112', name: '2AT2',             ip: '172.11.1.112', mac: '3C:7C:3F:B9:AC:50', type: 'PC', floor: '2F', zone: 'a타워', status: 'online', responseMs: 3, vendor: 'ASUSTek' },
+    { id: 'd11-113', name: '2층-spc2',         ip: '172.11.1.113', mac: 'B4:2E:99:D6:C6:B3', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 6, vendor: 'GIGA-BYTE' },
+    { id: 'd11-114', name: '2층-망막topo',     ip: '172.11.1.114', mac: '8C:B0:E9:92:7F:B9', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 7, vendor: 'Samsung' },
+    { id: 'd11-115', name: '2층-시야검사실',   ip: '172.11.1.115', mac: '18:C0:4D:99:ED:E1', type: 'PC', floor: '2F', zone: '시야검사', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE', x: 80, y: 52 },
+    { id: 'd11-116', name: '2층-vep',          ip: '172.11.1.116', mac: 'BC:E9:2F:A4:31:58', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 9, vendor: 'HP' },
+    { id: 'd11-117', name: '2층-oct1',         ip: '172.11.1.117', mac: '18:C0:4D:D0:EE:12', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'delayed', responseMs: 350, vendor: 'GIGA-BYTE', x: 58, y: 60 },
+    { id: 'd11-120', name: '2층-a타워4',      ip: '172.11.1.120', mac: '18:C0:4D:99:E3:62', type: 'PC', floor: '2F', zone: 'a타워', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-121', name: '2층-hra1',         ip: '172.11.1.121', mac: 'BC:0F:F3:BF:A9:B6', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 6, vendor: '' },
+    { id: 'd11-122', name: '2층-hra2',         ip: '172.11.1.122', mac: 'BC:0F:F3:BF:A4:01', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 7, vendor: '' },
+    { id: 'd11-125', name: 'IOLMaster700',     ip: '172.11.1.125', mac: '00:E0:F4:35:E5:17', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 5, vendor: 'INSIDE Tech' },
+    { id: 'd11-129', name: 'cirrus6000-2',     ip: '172.11.1.129', mac: 'C4:00:AD:7E:C0:A0', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 8, vendor: 'Advantech' },
+    { id: 'd11-130', name: '2층-ABscan',       ip: '172.11.1.130', mac: '00:50:08:0F:05:FA', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 7, vendor: 'TIVA' },
+    { id: 'd11-137', name: 'Visucam-NM3 (2F)', ip: '172.11.1.137', mac: '90:1B:0E:FC:01:90', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'online', responseMs: 6, vendor: 'Fujitsu' },
+    { id: 'd11-149', name: '2층-oct3',         ip: '172.11.1.149', mac: 'B4:2E:99:D6:C6:D5', type: 'DEVICE', floor: '2F', zone: '검사장비', status: 'offline', responseMs: null, vendor: 'GIGA-BYTE', x: 40, y: 70 },
+    { id: 'd11-165', name: '2층-접수1',        ip: '172.11.1.165', mac: 'B4:2E:99:EB:0B:3D', type: 'PC', floor: '2F', zone: '접수', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE', x: 24, y: 78 },
+    { id: 'd11-166', name: '2층-접수2',        ip: '172.11.1.166', mac: 'B4:2E:99:D6:D1:63', type: 'PC', floor: '2F', zone: '접수', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+    { id: 'd11-167', name: '2층-접수3',        ip: '172.11.1.167', mac: 'B4:2E:99:EB:0B:71', type: 'PC', floor: '2F', zone: '접수', status: 'online', responseMs: 2, vendor: 'GIGA-BYTE' },
+    { id: 'd11-168', name: '2층-접수4',        ip: '172.11.1.168', mac: 'B4:2E:99:D6:BF:D5', type: 'PC', floor: '2F', zone: '접수', status: 'online', responseMs: 3, vendor: 'GIGA-BYTE' },
+
+    // ===== 172.12.2.x - 별도 네트워크 (식별된 PC · 프린터 · POS) =====
+    { id: 'd12-7',   name: '3층-본부장실',                ip: '172.12.2.7',  mac: 'D8:5E:D3:97:86:05', type: 'PC',      floor: '3F', zone: '본부장실', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+    { id: 'd12-18',  name: 'Brother BRWF0A654FBD102',     ip: '172.12.2.18', mac: 'F0:A6:54:FB:D1:02', type: 'PRINTER', floor: null, zone: '프린터', status: 'online', responseMs: 12, vendor: 'Cloud Network Tech' },
+    { id: 'd12-28',  name: 'Brother BRWA83B7605AC32',     ip: '172.12.2.28', mac: 'A8:3B:76:05:AC:32', type: 'PRINTER', floor: null, zone: '프린터', status: 'online', responseMs: 14, vendor: 'Brother' },
+    { id: 'd12-30',  name: 'Brother BRWFCB0DEE74412',     ip: '172.12.2.30', mac: 'FC:B0:DE:E7:44:12', type: 'PRINTER', floor: null, zone: '프린터', status: 'online', responseMs: 11, vendor: 'Brother' },
+    { id: 'd12-40',  name: 'main pos',                    ip: '172.12.2.40', mac: '24:1C:04:77:7C:6E', type: 'POS',     floor: null, zone: 'POS', status: 'online', responseMs: 5, vendor: 'SHENZHEN JEHE' },
+    { id: 'd12-53',  name: 'DESKTOP-MBBAMKB',             ip: '172.12.2.53', mac: '50:E5:49:3B:E6:DF', type: 'PC',      floor: null, zone: '미할당 PC', status: 'online', responseMs: 4, vendor: 'GIGA-BYTE' },
+
+    // ----- POS (PAX · SHENZHEN JEHE) -----
+    { id: 'd12-10',  name: 'PAX-POS-10',    ip: '172.12.2.10', mac: '54:81:2D:77:11:F9', type: 'POS', floor: null, zone: 'POS', status: 'online', responseMs: 6, vendor: 'PAX' },
+    { id: 'd12-16',  name: 'PAX-POS-16',    ip: '172.12.2.16', mac: '54:81:2D:4C:8D:60', type: 'POS', floor: null, zone: 'POS', status: 'online', responseMs: 6, vendor: 'PAX' },
+    { id: 'd12-41',  name: 'JEHE-POS-41',   ip: '172.12.2.41', mac: '24:1C:04:77:7C:38', type: 'POS', floor: null, zone: 'POS', status: 'online', responseMs: 6, vendor: 'SHENZHEN JEHE' },
+
+    // ----- CCTV (Hikvision IP카메라 + Raysharp DVR/NVR) -----
+    { id: 'd12-11',  name: 'CCTV-Hik-11',       ip: '172.12.2.11', mac: '98:DF:82:C4:D7:C1', type: 'CCTV', floor: null, zone: 'IP 카메라', status: 'online', responseMs: 8, vendor: 'Hikvision' },
+    { id: 'd12-12',  name: 'CCTV-Hik-12',       ip: '172.12.2.12', mac: 'F8:4D:FC:E5:EB:84', type: 'CCTV', floor: null, zone: 'IP 카메라', status: 'online', responseMs: 8, vendor: 'Hikvision' },
+    { id: 'd12-13',  name: 'CCTV-Hik-13',       ip: '172.12.2.13', mac: 'F8:4D:FC:E5:EB:7C', type: 'CCTV', floor: null, zone: 'IP 카메라', status: 'online', responseMs: 8, vendor: 'Hikvision' },
+    { id: 'd12-14',  name: 'CCTV-Hik-14',       ip: '172.12.2.14', mac: 'F8:4D:FC:E5:EB:80', type: 'CCTV', floor: null, zone: 'IP 카메라', status: 'online', responseMs: 8, vendor: 'Hikvision' },
+    { id: 'd12-20',  name: 'CCTV-DVR-20',       ip: '172.12.2.20', mac: '00:23:63:7F:73:58', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-23',  name: 'CCTV-DVR-23',       ip: '172.12.2.23', mac: '00:23:63:7F:70:4F', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-26',  name: 'CCTV-DVR-26',       ip: '172.12.2.26', mac: '00:23:63:7F:73:65', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-29',  name: 'CCTV-DVR-29',       ip: '172.12.2.29', mac: '00:23:63:83:09:35', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-31',  name: 'CCTV-DVR-31',       ip: '172.12.2.31', mac: '00:23:63:7F:70:1E', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-32',  name: 'CCTV-DVR-32',       ip: '172.12.2.32', mac: '00:23:63:7F:70:A4', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-50',  name: 'CCTV-DVR-50',       ip: '172.12.2.50', mac: '00:23:63:7F:71:A0', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-51',  name: 'CCTV-DVR-51',       ip: '172.12.2.51', mac: '00:23:63:7F:72:7C', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-54',  name: 'CCTV-DVR-54',       ip: '172.12.2.54', mac: '00:23:63:7F:70:E0', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-55',  name: 'CCTV-DVR-55',       ip: '172.12.2.55', mac: '00:23:63:7F:70:33', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+    { id: 'd12-57',  name: 'CCTV-DVR-57',       ip: '172.12.2.57', mac: '00:23:63:7F:70:2C', type: 'CCTV', floor: null, zone: 'DVR/NVR', status: 'online', responseMs: 9, vendor: 'Raysharp' },
+
+    // ----- 네트워크 / 영상장비 / 임베디드 -----
+    { id: 'd12-17',  name: 'RIFATRON-17',       ip: '172.12.2.17', mac: '00:0C:28:0C:87:42', type: 'DEVICE',  floor: null, zone: '영상장비',  status: 'online', responseMs: 10, vendor: 'RIFATRON' },
+    { id: 'd12-21',  name: 'EFM-AP-12-21',      ip: '172.12.2.21', mac: '58:86:94:F2:4E:D5', type: 'NETWORK', floor: null, zone: '무선 AP',   status: 'online', responseMs: 5,  vendor: 'EFM Networks' },
+    { id: 'd12-25',  name: 'RaspberryPi-25',    ip: '172.12.2.25', mac: 'B8:27:EB:6D:7E:53', type: 'DEVICE',  floor: null, zone: '임베디드',  status: 'online', responseMs: 7,  vendor: 'Raspberry Pi' },
+
+    // ----- LG / Samsung 단말 (PC 또는 스마트 TV 추정) -----
+    { id: 'd12-22',  name: 'Samsung-22',  ip: '172.12.2.22', mac: 'F8:F1:E6:11:C9:63', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'Samsung' },
+    { id: 'd12-24',  name: 'LG-24',       ip: '172.12.2.24', mac: 'B0:37:95:CF:32:9E', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-27',  name: 'LG-27',       ip: '172.12.2.27', mac: '64:95:6C:CC:5A:C7', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-48',  name: 'LG-48',       ip: '172.12.2.48', mac: '64:95:6C:CC:5A:E8', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-52',  name: 'LG-52',       ip: '172.12.2.52', mac: '64:95:6C:D0:01:37', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-56',  name: 'LG-56',       ip: '172.12.2.56', mac: '64:95:6C:CC:5A:E3', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-58',  name: 'LG-58',       ip: '172.12.2.58', mac: '64:95:6C:BD:24:42', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-60',  name: 'LG-60',       ip: '172.12.2.60', mac: '64:95:6C:F3:9E:24', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-61',  name: 'LG-61',       ip: '172.12.2.61', mac: '64:95:6C:CC:5A:CF', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+    { id: 'd12-62',  name: 'LG-62',       ip: '172.12.2.62', mac: '64:95:6C:CC:5A:E1', type: 'PC', floor: null, zone: 'LG/삼성 단말', status: 'online', responseMs: 5, vendor: 'LG' },
+
+    // ----- 미식별 (벤더 정보 없음 또는 랜덤 MAC) -----
+    { id: 'd12-6',   name: '172.12.2.6',  ip: '172.12.2.6',  mac: '90:E2:FC:B0:63:DF', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-15',  name: '172.12.2.15', ip: '172.12.2.15', mac: '00:81:61:02:14:54', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-33',  name: '172.12.2.33', ip: '172.12.2.33', mac: '80:E4:DA:85:0F:AB', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-37',  name: '172.12.2.37', ip: '172.12.2.37', mac: '80:E4:DA:85:0F:B1', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-38',  name: '172.12.2.38', ip: '172.12.2.38', mac: '5A:FA:B9:44:AA:8E', type: 'UNKNOWN', floor: null, zone: '미식별 (랜덤 MAC)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-39',  name: '172.12.2.39', ip: '172.12.2.39', mac: '1A:1E:60:32:55:84', type: 'UNKNOWN', floor: null, zone: '미식별 (랜덤 MAC)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-42',  name: '172.12.2.42', ip: '172.12.2.42', mac: '80:E4:DA:86:98:29', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-43',  name: '172.12.2.43', ip: '172.12.2.43', mac: '80:E4:DA:86:98:23', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-47',  name: '172.12.2.47', ip: '172.12.2.47', mac: 'A0:44:B7:6D:F9:70', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' },
+    { id: 'd12-49',  name: '172.12.2.49', ip: '172.12.2.49', mac: 'A0:44:B7:2F:8D:FA', type: 'UNKNOWN', floor: null, zone: '미식별 (벤더 미상)', status: 'checking', responseMs: null, vendor: '미상' }
+];
+
+// 층 기본 라벨 (요약/툴팁용)
+const FLOOR_LABELS = {
+    '1F': { title: '약국 · 출입구 · 안내 · 건물 공용부', short: '약국/공용부' },
+    '2F': { title: '접수 · 검사실 · 촬영장비 · 시야검사', short: '접수/검사/촬영' },
+    '3F': { title: '진료실 · 수납창구 · 상담실 · 검사실', short: '진료/상담/검사' },
+    '4F': { title: '망막센터 · 수납창구 · 검사실 · 상담실', short: '망막/검사/상담' },
+    '5F': { title: '행정실 · 수술실 · 준비실 · 회복실', short: '행정/수술/회복' },
+    '6F': { title: '서버실 · 원장실 · 회의실 · 관리실', short: '서버실/원장실' },
+    '7F': { title: '교육실 · 회의실 · 창고 · 예비공간', short: '교육/회의/창고' }
+};
+
+const UNKNOWN_FLOOR_LABEL = { title: '층 미할당 (네트워크 · UPS · CCTV · POS · 프린터 · 미할당 PC)', short: '층 미할당' };
+
+const STATUS_META = {
+    online:   { label: '온라인',     color: '#2fba72', shortLabel: '응답 있음' },
+    checking: { label: '확인 중',     color: '#f3b53a', shortLabel: '확인 중' },
+    delayed:  { label: '응답 지연',   color: '#f5852b', shortLabel: '응답 지연' },
+    offline:  { label: '응답 없음',   color: '#dc4d4d', shortLabel: '오프라인 추정' },
+    disabled: { label: '체크 제외',   color: '#94a1b7', shortLabel: '체크 제외' }
+};
+
+// 평면도 이미지 + 층별 기본 구역 정의
+// image 경로는 상대 경로로 두어 file:// 와 http:// 양쪽에서 동작.
+// sourcePdf 는 참고용 (PDF→PNG 변환 스크립트에서 사용).
+const FLOOR_PLAN_SOURCE_DIR = '\\\\172.11.1.5\\03 업무용 검사팀\\4.기타\\박승근\\박승근\\평면도\\평면도';
+const FLOOR_PLANS = {
+    '1F': {
+        label: '1층',
+        image: 'public/floorplans/floor-1.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\1층.pdf',
+        zones: ['약국/건물 공용부', '출입구', '안내', '기타']
+    },
+    '2F': {
+        label: '2층',
+        image: 'public/floorplans/floor-2.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\2층.pdf',
+        zones: ['접수 데스크', '검사실', '촬영장비', '시야검사', '대기공간']
+    },
+    '3F': {
+        label: '3층',
+        image: 'public/floorplans/floor-3.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\3층.pdf',
+        zones: ['진료실', '수납창구', '상담실', '검사실', '대기공간']
+    },
+    '4F': {
+        label: '4층',
+        image: 'public/floorplans/floor-4.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\4층.pdf',
+        zones: ['망막센터', '수납창구', '검사실', '상담실', '대기공간']
+    },
+    '5F': {
+        label: '5층',
+        image: 'public/floorplans/floor-5.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\5층.pdf',
+        zones: ['행정실', '수납창구', '수술실', '준비실', '회복실']
+    },
+    '6F': {
+        label: '6층',
+        image: 'public/floorplans/floor-6.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\6층.pdf',
+        zones: ['서버실', '원장실', '회의실', '관리실', '기타']
+    },
+    '7F': {
+        label: '7층',
+        image: 'public/floorplans/floor-7.png',
+        sourcePdf: FLOOR_PLAN_SOURCE_DIR + '\\7층.pdf',
+        zones: ['교육실', '회의실', '창고', '예비공간', '기타']
+    }
+};
+
+const FLOOR_ORDER = ['1F', '2F', '3F', '4F', '5F', '6F', '7F'];
+
+// 장비 유형 - 한글 라벨 매핑
+const DEVICE_TYPE_LABELS = {
+    PC: 'PC',
+    SERVER: '서버',
+    NAS: 'NAS',
+    DEVICE: '검사장비',
+    PRINTER: '프린터',
+    POS: 'POS',
+    CCTV: 'CCTV',
+    NETWORK: '네트워크',
+    UPS: 'UPS',
+    ETC: '기타',
+    UNKNOWN: '미식별'
+};
+
 const InfrastructureData = {
     // 기본 인프라 문서 콘텐츠
     content: {
