@@ -2701,6 +2701,8 @@ class InfrastructureManual {
         if (typeof InfraStatusMonitor === 'undefined') return;
         this.statusMonitor = new InfraStatusMonitor(this);
         this.statusMonitor.render();
+        // 화면 진입 시 저장된 장비 상태를 받아와 반영 (실패해도 앱은 계속 동작)
+        this.statusMonitor.loadStatusFromServer();
     }
 
     // 이벤트 리스너 설정
@@ -6436,6 +6438,81 @@ class InfraStatusMonitor {
         // 전체 장비 표 모달
         if (this.openListBtnEl) {
             this.openListBtnEl.addEventListener('click', () => this.openDeviceListModal());
+        }
+        // 수동 새로고침 — 백엔드에 전체 장비 ping 체크 요청
+        if (this.refreshBtnEl) {
+            this.refreshBtnEl.addEventListener('click', () => this.runManualCheck());
+        }
+    }
+
+    // 백엔드가 내려준 상태 결과를 devices 에 반영.
+    // 위치 좌표(x, y)는 건드리지 않는다 — 상태 필드만 갱신한다.
+    applyStatusResults(list) {
+        if (!Array.isArray(list)) return;
+        const byId = new Map();
+        list.forEach(item => {
+            if (item && item.id != null) byId.set(String(item.id), item);
+        });
+        this.devices.forEach(device => {
+            const result = byId.get(String(device.id));
+            if (!result) return;
+            device.status = normalizeStatus(result.status);
+            device.latencyMs = toFiniteNumber(result.latencyMs);
+            device.responseMs = device.latencyMs;
+            device.lastCheckedAt = (typeof result.lastCheckedAt === 'string') ? result.lastCheckedAt : null;
+            device.lastSuccessAt = (typeof result.lastSuccessAt === 'string') ? result.lastSuccessAt : null;
+        });
+        this.lastUpdated = new Date();
+    }
+
+    // 화면 진입 시 호출 — 저장된 최신 상태를 받아와 반영 (체크는 수행하지 않음)
+    async loadStatusFromServer() {
+        if (typeof fetch !== 'function' || !this.app?.authFetch) return;
+        try {
+            const response = await this.app.authFetch('/api/pc-status', {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const payload = await response.json();
+            this.applyStatusResults(payload?.devices);
+            this.render();
+        } catch (error) {
+            if (error?.code === 'AUTH_REQUIRED' || error?.code === 'ADMIN_REQUIRED') return;
+            // 상태를 못 받아도 앱이 죽으면 안 된다 — 기존 표시를 유지한다
+            console.warn('장비 상태를 불러오지 못했습니다.', error);
+        }
+    }
+
+    // 수동 새로고침 버튼 — 백엔드에 전체 장비 ping 체크를 요청하고 결과를 반영
+    async runManualCheck() {
+        if (this.isCheckingStatus) return;
+        if (typeof fetch !== 'function' || !this.app?.authFetch) return;
+        this.isCheckingStatus = true;
+        if (this.refreshBtnEl) {
+            this.refreshBtnEl.disabled = true;
+            this.refreshBtnEl.textContent = '체크 중…';
+        }
+        try {
+            const response = await this.app.authFetch('/api/pc-status/check', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const payload = await response.json();
+            this.applyStatusResults(payload?.devices);
+            this.render();
+            this.app?.showSuccess?.('장비 상태를 새로고침했습니다.');
+        } catch (error) {
+            if (error?.code !== 'AUTH_REQUIRED' && error?.code !== 'ADMIN_REQUIRED') {
+                console.warn('장비 상태 새로고침에 실패했습니다.', error);
+                this.app?.showError?.('장비 상태 새로고침에 실패했습니다.');
+            }
+        } finally {
+            this.isCheckingStatus = false;
+            if (this.refreshBtnEl) {
+                this.refreshBtnEl.disabled = false;
+                this.refreshBtnEl.textContent = '수동 새로고침';
+            }
         }
     }
 
